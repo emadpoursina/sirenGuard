@@ -1,0 +1,69 @@
+---
+description: Siren Guard project context, stack, and constraints for AI agents
+alwaysApply: true
+---
+
+# Siren Guard — AI Rules
+
+## Project Context
+
+- **Type**: macOS desktop utility (menu bar + floating overlay)
+- **Stack**: Electron · plain HTML/CSS/JS renderer · electron-store
+- **Repo layout**:
+  ```
+  main.js           # Electron main: tray, window, lock IPC
+  preload.js        # contextBridge IPC bridge
+  store.js          # electron-store wrapper
+  renderer/         # floating button UI
+  assets/           # tray icon, button glyph
+  ```
+
+---
+
+## Workflow
+
+- Always follow: **Research → Plan → Execute**
+- Do not write code until the plan is confirmed if the change touches 2+ files
+- For ambiguous tasks: ask, do not guess
+- Commit style: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`)
+- Use `/specsmd-fire-planner` before multi-file feature work; implement via `/specsmd-fire-builder`
+
+---
+
+## Code Rules
+
+- Plain JavaScript in main/preload/renderer — no TypeScript unless explicitly approved
+- Never rewrite an entire file to change one function — surgical edits only
+- Match existing naming conventions and indentation exactly
+- Remove all AI-style comments before finishing
+- Remove unused imports and variables before finalizing
+
+---
+
+## Constraints
+
+- No new external dependencies without explicit approval
+- macOS-only lock logic for v1 (`CGSession -suspend` via `child_process.exec`)
+- Terminal commands: check mentally before suggesting — no destructive defaults
+- Never expose secrets, tokens, or credentials in output
+
+---
+
+## Project-Specific Notes
+
+- Floating window uses `-webkit-app-region: drag` on the wrapper and `no-drag` on the click target to support drag + click
+- Use a short mouse-down/mouse-up threshold to distinguish drag from click
+- Lock screen via `CGSession -suspend` — does not require accessibility permissions
+- Button position and launch-at-login settings persist via `electron-store`
+- Idle button: translucent/low-opacity; armed state: pulse/countdown during 2s cancel window
+
+---
+
+## Out of Scope
+
+- Authentication / multi-user support
+- Cloud sync
+- Mobile version
+- Cross-platform lock (Windows/Linux) in v1
+- Multiple trigger types, settings screen, stats — post-v1 roadmap only
+- Analytics/tracking beyond optional local trigger count
