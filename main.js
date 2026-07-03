@@ -59,24 +59,50 @@ function createFloatingWindow() {
   });
 }
 
-function syncLaunchAtLogin(enabled) {
-  app.setLoginItemSettings({
-    openAtLogin: enabled,
-    openAsHidden: true,
-  });
-  setLaunchAtLogin(enabled);
+function applyLaunchAtLogin(enabled) {
+  if (!app.isPackaged) {
+    return false;
+  }
+
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: enabled,
+      openAsHidden: true,
+    });
+    setLaunchAtLogin(enabled);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getLaunchAtLoginState() {
+  if (!app.isPackaged) {
+    return getLaunchAtLogin();
+  }
+
+  try {
+    return app.getLoginItemSettings().openAtLogin;
+  } catch {
+    return getLaunchAtLogin();
+  }
 }
 
 function buildTrayMenu() {
-  const launchAtLogin = getLaunchAtLogin();
+  const launchAtLogin = getLaunchAtLoginState();
 
   return Menu.buildFromTemplate([
     {
       label: 'Launch at Login',
       type: 'checkbox',
       checked: launchAtLogin,
+      enabled: app.isPackaged,
       click: (menuItem) => {
-        syncLaunchAtLogin(menuItem.checked);
+        const applied = applyLaunchAtLogin(menuItem.checked);
+        if (!applied) {
+          menuItem.checked = getLaunchAtLoginState();
+          tray.setContextMenu(buildTrayMenu());
+        }
       },
     },
     { type: 'separator' },
@@ -116,7 +142,10 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   createFloatingWindow();
   createTray();
-  syncLaunchAtLogin(getLaunchAtLogin());
+
+  if (app.isPackaged && getLaunchAtLogin()) {
+    applyLaunchAtLogin(true);
+  }
 
   app.on('activate', () => {
     if (!floatingWindow) {

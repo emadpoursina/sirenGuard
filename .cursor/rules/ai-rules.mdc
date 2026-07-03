@@ -8,7 +8,7 @@ alwaysApply: true
 ## Project Context
 
 - **Type**: macOS desktop utility (menu bar + floating overlay)
-- **Stack**: Electron · plain HTML/CSS/JS renderer · electron-store
+- **Stack**: Electron · plain HTML/CSS/JS renderer · electron-store · Bun
 - **Repo layout**:
   ```
   main.js           # Electron main: tray, window, lock IPC
@@ -26,6 +26,7 @@ alwaysApply: true
 - Do not write code until the plan is confirmed if the change touches 2+ files
 - For ambiguous tasks: ask, do not guess
 - Commit style: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`)
+- Package manager: **Bun** (`bun install`, `bun start`, `bun add`) — do not use npm
 - Use `/specsmd-fire-planner` before multi-file feature work; implement via `/specsmd-fire-builder`
 
 ---
