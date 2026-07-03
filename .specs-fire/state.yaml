@@ -8,14 +8,17 @@ workspace:
   type: brownfield
   structure: monolith
   autonomy_bias: balanced
-  run_scope_preference: null
-  run_scope_history: []
+  run_scope_preference: batch
+  run_scope_history:
+    - choice: batch
+      items_count: 3
+      timestamp: "2026-07-03T08:08:00-07:00"
   scanned_at: "2026-07-03T07:19:00-07:00"
 
 intents:
   - id: triggers-and-settings
     title: Multiple trigger types and settings screen
-    status: in_progress
+    status: completed
     work_items:
       - id: lock-orchestration
         title: Lock/cancel orchestration refactor
@@ -33,21 +36,24 @@ intents:
         depends_on: []
       - id: idle-timer-trigger
         title: Idle-timer trigger
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
+        current_phase: review
         depends_on: [lock-orchestration, trigger-config-store]
       - id: app-detection-trigger
         title: App-detection trigger
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
+        current_phase: review
         depends_on: [lock-orchestration, trigger-config-store]
       - id: settings-window
         title: Settings window
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
+        current_phase: review
         depends_on: [trigger-config-store]
 
 
@@ -62,3 +68,7 @@ runs:
       work_item: lock-orchestration
       intent: triggers-and-settings
       completed: "2026-07-03T07:48:00-07:00"
+    - id: run-sirenguard-2026-003
+      work_item: idle-timer-trigger, app-detection-trigger, settings-window
+      intent: triggers-and-settings
+      completed: "2026-07-03T08:25:00-07:00"

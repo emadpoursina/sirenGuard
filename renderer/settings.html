@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Siren Guard Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main class="settings">
+      <h1 class="title">Siren Guard</h1>
+
+      <section class="trigger-block">
+        <div class="trigger-head">
+          <label class="switch">
+            <input id="idle-enabled" type="checkbox" />
+            <span class="switch-track"></span>
+          </label>
+          <div class="trigger-meta">
+            <h2>Idle-timer trigger</h2>
+            <p>Lock after the machine has been idle for a set time.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="idle-threshold">Idle threshold (seconds)</label>
+          <input id="idle-threshold" type="number" min="1" step="1" value="300" />
+        </div>
+      </section>
+
+      <section class="trigger-block">
+        <div class="trigger-head">
+          <label class="switch">
+            <input id="app-enabled" type="checkbox" />
+            <span class="switch-track"></span>
+          </label>
+          <div class="trigger-meta">
+            <h2>App-detection trigger</h2>
+            <p>Lock when a flagged app stays frontmost for a set delay.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="app-delay">Delay (seconds)</label>
+          <input id="app-delay" type="number" min="1" step="1" value="10" />
+        </div>
+
+        <div class="flagged">
+          <div class="flagged-head">
+            <h3>Flagged apps</h3>
+            <span id="flagged-count" class="muted">0</span>
+          </div>
+
+          <ul id="flagged-list" class="flagged-list"></ul>
+
+          <div class="add-row">
+            <select id="running-apps-select"><option value="">Add from running apps…</option></select>
+            <button id="add-from-running" type="button">Add</button>
+          </div>
+
+          <div class="add-row">
+            <input id="manual-name" type="text" placeholder="App name" />
+            <input id="manual-bundle" type="text" placeholder="Bundle ID" />
+            <button id="add-manual" type="button">Add</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <span id="saved-indicator" class="saved" hidden>Saved</span>
+        <button id="save" type="button" class="primary">Save</button>
+      </div>
+    </main>
+    <script src="settings.js"></script>
+  </body>
+</html>

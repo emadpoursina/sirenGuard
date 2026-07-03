@@ -1,4 +1,5 @@
 const path = require('path');
+const { exec } = require('child_process');
 const {
   app,
   BrowserWindow,
@@ -12,14 +13,26 @@ const {
   setButtonPosition,
   getLaunchAtLogin,
   setLaunchAtLogin,
+  getTriggerConfig,
+  setTriggerConfig,
 } = require('./store');
 const lockOrchestration = require('./lock-orchestration');
+const idleTrigger = require('./idle-trigger');
+const appDetectionTrigger = require('./app-detection-trigger');
 
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
 
+const SETTINGS_WIDTH = 380;
+const SETTINGS_HEIGHT = 560;
+const RUNNING_APPS_NAME_QUERY =
+  'tell application "System Events" to get name of every process whose background only is false';
+const RUNNING_APPS_BUNDLE_QUERY =
+  'tell application "System Events" to get bundle identifier of every process whose background only is false';
+
 let tray = null;
 let floatingWindow = null;
+let settingsWindow = null;
 
 function createFloatingWindow() {
   const position = getButtonPosition();
@@ -51,6 +64,71 @@ function createFloatingWindow() {
     if (!floatingWindow) return;
     const [x, y] = floatingWindow.getPosition();
     setButtonPosition({ x, y });
+  });
+}
+
+function runAppleScript(script) {
+  return new Promise((resolve) => {
+    exec(`osascript -e '${script}'`, (err, stdout) => {
+      if (err) {
+        resolve(null);
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
+}
+
+async function getRunningApps() {
+  const [namesCsv, bundlesCsv] = await Promise.all([
+    runAppleScript(RUNNING_APPS_NAME_QUERY),
+    runAppleScript(RUNNING_APPS_BUNDLE_QUERY),
+  ]);
+
+  if (!namesCsv && !bundlesCsv) {
+    return [];
+  }
+
+  const names = namesCsv ? namesCsv.split(', ') : [];
+  const bundles = bundlesCsv ? bundlesCsv.split(', ') : [];
+  const count = Math.max(names.length, bundles.length);
+  const apps = [];
+  for (let i = 0; i < count; i++) {
+    apps.push({
+      name: names[i] || null,
+      bundleId: bundles[i] || null,
+    });
+  }
+  return apps;
+}
+
+function createSettingsWindow() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: SETTINGS_WIDTH,
+    height: SETTINGS_HEIGHT,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'settings-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
+  settingsWindow.once('ready-to-show', () => {
+    settingsWindow.show();
+  });
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
   });
 }
 
@@ -87,6 +165,13 @@ function buildTrayMenu() {
   const launchAtLogin = getLaunchAtLoginState();
 
   return Menu.buildFromTemplate([
+    {
+      label: 'Settings…',
+      click: () => {
+        createSettingsWindow();
+      },
+    },
+    { type: 'separator' },
     {
       label: 'Launch at Login',
       type: 'checkbox',
@@ -135,12 +220,26 @@ function registerIpcHandlers() {
   ipcMain.handle('get-position', () => {
     return getButtonPosition();
   });
+
+  ipcMain.handle('get-trigger-config', () => {
+    return getTriggerConfig();
+  });
+
+  ipcMain.handle('set-trigger-config', (_event, config) => {
+    setTriggerConfig(config);
+  });
+
+  ipcMain.handle('get-running-apps', async () => {
+    return getRunningApps();
+  });
 }
 
 app.whenReady().then(() => {
   registerIpcHandlers();
   createFloatingWindow();
   createTray();
+  idleTrigger.start();
+  appDetectionTrigger.start();
 
   if (app.isPackaged && getLaunchAtLogin()) {
     applyLaunchAtLogin(true);
@@ -155,4 +254,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', (event) => {
   event.preventDefault();
+});
+
+app.on('will-quit', () => {
+  idleTrigger.stop();
+  appDetectionTrigger.stop();
 });

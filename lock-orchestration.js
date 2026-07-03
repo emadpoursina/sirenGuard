@@ -45,6 +45,10 @@ function cancel() {
   emitArmed(false);
 }
 
+function isArmed() {
+  return timer !== null;
+}
+
 function attach(webContents) {
   target = webContents;
 }
@@ -53,4 +57,5 @@ module.exports = {
   attach,
   arm,
   cancel,
+  isArmed,
 };
