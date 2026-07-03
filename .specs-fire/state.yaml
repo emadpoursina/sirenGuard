@@ -1,0 +1,19 @@
+project:
+  name: "siren-guard"
+  description: "macOS menu-bar utility with a floating lock button"
+  created: "2026-07-03T07:19:00-07:00"
+  fire_version: "0.1.8"
+
+workspace:
+  type: brownfield
+  structure: monolith
+  autonomy_bias: balanced
+  run_scope_preference: null
+  run_scope_history: []
+  scanned_at: "2026-07-03T07:19:00-07:00"
+
+intents: []
+
+runs:
+  active: []
+  completed: []
