@@ -22,7 +22,7 @@ No automated test suite currently exists for Siren Guard. Verification is manual
 
 **Critical paths that MUST be manually verified:**
 - Floating button drag vs. click distinction (mouse-down/up threshold)
-- Lock trigger (2s arm/cancel countdown) actually invokes `CGSession -suspend`
+- Lock trigger (2s arm/cancel countdown) actually invokes `open -a ScreenSaverEngine`
 - Button position persists across app restarts
 - Launch-at-login toggle persists and applies correctly when packaged
 
@@ -43,7 +43,7 @@ No automated test suite currently exists for Siren Guard. Verification is manual
 **Approach**: N/A — if introduced, mock `child_process.exec` and `electron-store` to avoid side effects during tests
 
 **Guidelines**:
-- Never let tests actually invoke `CGSession -suspend` or lock the real screen
+- Never let tests actually invoke the lock command or lock the real screen
 - Never let tests write to the real `electron-store` config file on disk
 
 ## Test Data

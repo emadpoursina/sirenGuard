@@ -11,10 +11,10 @@ A single macOS user interacts with the tray icon (to toggle launch-at-login or q
 ### Context Diagram
 
 ```
-┌─────────────┐        ┌────────────────────┐        ┌────────────────┐
-│   macOS     │◄──────►│   Siren Guard App   │──────► │  CGSession CLI  │
-│   User      │  click │  (Electron process) │  exec  │  (-suspend)     │
-└─────────────┘        └────────────────────┘        └────────────────┘
+┌─────────────┐        ┌────────────────────┐        ┌─────────────────────┐
+│   macOS     │◄──────►│   Siren Guard App   │──────► │  ScreenSaverEngine  │
+│   User      │  click │  (Electron process) │  exec  │  (open -a …)        │
+└─────────────┘        └────────────────────┘        └─────────────────────┘
                                │
                                ▼
                         ┌──────────────┐
@@ -29,7 +29,7 @@ A single macOS user interacts with the tray icon (to toggle launch-at-login or q
 
 ### External Systems
 
-- **macOS `CGSession` CLI**: Invoked via `child_process.exec` to suspend (lock) the session.
+- **macOS ScreenSaverEngine**: Invoked via `child_process.exec('open -a ScreenSaverEngine')` in `lock-orchestration.js` to start the screensaver and lock the session (requires Lock Screen → Require password: Immediately).
 - **macOS Login Items**: Controlled via `app.setLoginItemSettings` for launch-at-login behavior (packaged app only).
 
 ## Architecture Pattern
@@ -43,14 +43,20 @@ A single macOS user interacts with the tray icon (to toggle launch-at-login or q
 
 #### Main Process (`main.js`)
 
-- **Purpose**: App lifecycle, window/tray management, IPC handling, lock invocation
-- **Responsibilities**: Create floating window and tray, register IPC handlers, apply launch-at-login settings
-- **Dependencies**: `electron`, `store.js`, macOS `CGSession` CLI
+- **Purpose**: App lifecycle, window/tray management, IPC handling
+- **Responsibilities**: Create floating window and tray, register IPC handlers (`arm`, `cancel`, position), apply launch-at-login settings
+- **Dependencies**: `electron`, `store.js`, `lock-orchestration.js`
+
+#### Lock Orchestration (`lock-orchestration.js`)
+
+- **Purpose**: Shared arm/cancel state machine and lock invocation
+- **Responsibilities**: 2s countdown, `open -a ScreenSaverEngine` exec, `armed-state` events to floating window
+- **Dependencies**: `child_process`
 
 #### Preload Bridge (`preload.js`)
 
 - **Purpose**: Securely expose a minimal API (`window.sirenGuard`) to the renderer
-- **Responsibilities**: Bridge `lock`, `savePosition`, `getPosition` calls to `ipcRenderer.invoke`
+- **Responsibilities**: Bridge `arm`, `cancel`, `onArmedState`, `savePosition`, `getPosition` to IPC
 - **Dependencies**: `electron` (`contextBridge`, `ipcRenderer`)
 
 #### Persistence (`store.js`)
@@ -62,7 +68,7 @@ A single macOS user interacts with the tray icon (to toggle launch-at-login or q
 #### Renderer UI (`renderer/`)
 
 - **Purpose**: Render the floating draggable lock button
-- **Responsibilities**: Handle drag vs. click detection, arm/cancel countdown UI, call `window.sirenGuard.lock()`
+- **Responsibilities**: Handle drag vs. click detection, arm/cancel via IPC, reflect armed state from `onArmedState`
 - **Dependencies**: `preload.js`-exposed API only (no direct Node/Electron access)
 
 ### Component Diagram
@@ -70,16 +76,18 @@ A single macOS user interacts with the tray icon (to toggle launch-at-login or q
 ```
 renderer/button.js ──(window.sirenGuard)──► preload.js ──(ipcRenderer.invoke)──► main.js ──► store.js
                                                                                       │
-                                                                                      └──► CGSession -suspend
+                                                                                      └──► lock-orchestration.js
+                                                                                                └──► open -a ScreenSaverEngine
 ```
 
 ## Data Flow
 
-User clicks and holds the floating button → renderer arms a 2s countdown → on completion, renderer calls `window.sirenGuard.lock()` → preload invokes `ipcMain.handle('lock-screen')` → main process execs `CGSession -suspend`. Button drag events update position → persisted via `store.js` on `moved` window event.
+User short-clicks the floating button → renderer calls `window.sirenGuard.arm()` → preload invokes `ipcMain.handle('arm')` → `lock-orchestration.js` starts 2s countdown and emits `armed-state` → on expiry, execs `open -a ScreenSaverEngine`. Second click during window calls `cancel()`. Button drag events update position → persisted via `store.js` on `moved` window event.
 
 ```
-[User click] → [renderer countdown] → [preload bridge] → [main IPC handler] → [exec CGSession -suspend]
-[User drag]  → [window 'moved' event] → [setButtonPosition] → [electron-store]
+[User click]  → [preload arm/cancel] → [main IPC] → [lock-orchestration] → [exec open -a ScreenSaverEngine]
+[armed-state] ← [main webContents.send] ← [lock-orchestration]
+[User drag]   → [window 'moved' event] → [setButtonPosition] → [electron-store]
 ```
 
 ## Technology Stack
@@ -89,7 +97,7 @@ User clicks and holds the floating button → renderer arms a 2s countdown → o
 | Desktop shell | Electron ^43.0.0 | Tray, windows, native OS integration |
 | Renderer UI | Plain HTML/CSS/JS | Floating button UI |
 | Persistence | electron-store ^11.0.2 | Button position, launch-at-login preference |
-| Lock mechanism | macOS `CGSession -suspend` | Screen lock without needing accessibility permissions |
+| Lock mechanism | `open -a ScreenSaverEngine` | No accessibility permissions; works on current macOS where `CGSession -suspend` path was removed |
 | Package manager | Bun | Install/run scripts |
 
 ## Non-Functional Requirements
@@ -102,7 +110,7 @@ User clicks and holds the floating button → renderer arms a 2s countdown → o
 ### Security
 
 - Renderer runs with `contextIsolation: true` and `nodeIntegration: false` — no direct Node access
-- Only a narrow, explicit IPC API (`lock`, `savePosition`, `getPosition`) is exposed via `contextBridge`
+- Only a narrow, explicit IPC API (`arm`, `cancel`, `onArmedState`, `savePosition`, `getPosition`) is exposed via `contextBridge`
 - No secrets, tokens, or credentials handled anywhere in the app
 
 ### Scalability
@@ -111,7 +119,7 @@ Not applicable — single-user, single-instance local desktop utility with no co
 
 ## Constraints
 
-- macOS-only lock logic for v1 (`CGSession -suspend`)
+- macOS-only lock logic for v1 (`open -a ScreenSaverEngine`)
 - No new external dependencies without explicit approval
 - Plain JavaScript only — no TypeScript unless explicitly approved
 - No authentication, multi-user support, cloud sync, or cross-platform lock support in v1
@@ -120,7 +128,7 @@ Not applicable — single-user, single-instance local desktop utility with no co
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Lock mechanism | `CGSession -suspend` via `child_process.exec` | Doesn't require accessibility permissions, unlike simulated key presses |
+| Lock mechanism | `open -a ScreenSaverEngine` via `child_process.exec` | No accessibility permissions; `CGSession -suspend` path removed on recent macOS (e.g. 26+) |
 | Persistence | `electron-store` | Simple, file-backed, no database needed for a two-key preference store |
 | Renderer stack | Plain HTML/CSS/JS | Avoids extra build tooling/dependencies for a tiny UI surface |
 | IPC boundary | `contextBridge` + `ipcRenderer.invoke` | Electron security best practice; keeps renderer sandboxed |

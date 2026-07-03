@@ -12,8 +12,53 @@ workspace:
   run_scope_history: []
   scanned_at: "2026-07-03T07:19:00-07:00"
 
-intents: []
+intents:
+  - id: triggers-and-settings
+    title: Multiple trigger types and settings screen
+    status: in_progress
+    work_items:
+      - id: lock-orchestration
+        title: Lock/cancel orchestration refactor
+        status: completed
+        complexity: high
+        mode: validate
+        checkpoint_1: approved
+        current_phase: review
+        depends_on: []
+      - id: trigger-config-store
+        title: Trigger config store
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+      - id: idle-timer-trigger
+        title: Idle-timer trigger
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [lock-orchestration, trigger-config-store]
+      - id: app-detection-trigger
+        title: App-detection trigger
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [lock-orchestration, trigger-config-store]
+      - id: settings-window
+        title: Settings window
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [trigger-config-store]
+
 
 runs:
   active: []
-  completed: []
+  completed:
+    - id: run-sirenguard-2026-001
+      work_item: trigger-config-store
+      intent: triggers-and-settings
+      completed: "2026-07-03T07:42:00-07:00"
+    - id: run-sirenguard-2026-002
+      work_item: lock-orchestration
+      intent: triggers-and-settings
+      completed: "2026-07-03T07:48:00-07:00"

@@ -11,8 +11,9 @@ alwaysApply: true
 - **Stack**: Electron · plain HTML/CSS/JS renderer · electron-store · Bun
 - **Repo layout**:
   ```
-  main.js           # Electron main: tray, window, lock IPC
-  preload.js        # contextBridge IPC bridge
+  main.js                 # Electron main: tray, window, IPC
+  lock-orchestration.js   # Arm/cancel state machine + lock command
+  preload.js              # contextBridge IPC bridge
   store.js          # electron-store wrapper
   renderer/         # floating button UI
   assets/           # tray icon, button glyph
@@ -44,7 +45,7 @@ alwaysApply: true
 ## Constraints
 
 - No new external dependencies without explicit approval
-- macOS-only lock logic for v1 (`CGSession -suspend` via `child_process.exec`)
+- macOS-only lock logic for v1 (`open -a ScreenSaverEngine` via `child_process.exec` in `lock-orchestration.js`)
 - Terminal commands: check mentally before suggesting — no destructive defaults
 - Never expose secrets, tokens, or credentials in output
 
@@ -54,7 +55,7 @@ alwaysApply: true
 
 - Floating window uses `-webkit-app-region: drag` on the wrapper and `no-drag` on the click target to support drag + click
 - Use a short mouse-down/mouse-up threshold to distinguish drag from click
-- Lock screen via `CGSession -suspend` — does not require accessibility permissions
+- Lock screen via `open -a ScreenSaverEngine` in `lock-orchestration.js` — no accessibility permissions; requires System Settings → Lock Screen → Require password: Immediately
 - Button position and launch-at-login settings persist via `electron-store`
 - Idle button: translucent/low-opacity; armed state: pulse/countdown during 2s cancel window
 

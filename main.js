@@ -1,5 +1,4 @@
 const path = require('path');
-const { exec } = require('child_process');
 const {
   app,
   BrowserWindow,
@@ -14,19 +13,13 @@ const {
   getLaunchAtLogin,
   setLaunchAtLogin,
 } = require('./store');
-
-const LOCK_COMMAND =
-  '/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession -suspend';
+const lockOrchestration = require('./lock-orchestration');
 
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
 
 let tray = null;
 let floatingWindow = null;
-
-function lockScreen() {
-  exec(`"${LOCK_COMMAND}"`);
-}
 
 function createFloatingWindow() {
   const position = getButtonPosition();
@@ -51,6 +44,8 @@ function createFloatingWindow() {
 
   floatingWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   floatingWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  lockOrchestration.attach(floatingWindow.webContents);
 
   floatingWindow.on('moved', () => {
     if (!floatingWindow) return;
@@ -125,8 +120,12 @@ function createTray() {
 }
 
 function registerIpcHandlers() {
-  ipcMain.handle('lock-screen', () => {
-    lockScreen();
+  ipcMain.handle('arm', () => {
+    lockOrchestration.arm();
+  });
+
+  ipcMain.handle('cancel', () => {
+    lockOrchestration.cancel();
   });
 
   ipcMain.handle('save-position', (_event, position) => {

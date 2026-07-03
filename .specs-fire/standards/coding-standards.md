@@ -118,7 +118,7 @@ Not applicable — no structured logging configured.
 
 ### When to Comment
 
-- Only for non-obvious intent (e.g., why `CGSession -suspend` doesn't need accessibility permissions)
+- Only for non-obvious intent (e.g., why `open -a ScreenSaverEngine` needs Lock Screen set to "Immediately")
 - Never narrate what the code obviously does
 - Remove all AI-style comments before finishing a change
 

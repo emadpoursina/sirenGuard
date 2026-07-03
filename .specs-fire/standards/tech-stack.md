@@ -2,7 +2,7 @@
 
 ## Overview
 
-Siren Guard is a lightweight macOS menu-bar utility built with Electron. It shows a small floating, draggable button that locks the screen (via `CGSession -suspend`) after a short arm/cancel window. No backend, database, or network layer — purely a local desktop utility.
+Siren Guard is a lightweight macOS menu-bar utility built with Electron. It shows a small floating, draggable button that locks the screen (via `open -a ScreenSaverEngine`) after a short arm/cancel window. No backend, database, or network layer — purely a local desktop utility.
 
 ## Core Technologies
 
