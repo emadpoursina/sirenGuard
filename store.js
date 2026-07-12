@@ -1,5 +1,23 @@
 const Store = require('electron-store').default;
 
+function defaultTriggersArray() {
+  return [
+    {
+      id: 'idle',
+      name: 'Idle-timer',
+      enabled: false,
+      thresholdSec: 300,
+    },
+    {
+      id: 'app-detection',
+      name: 'App-detection',
+      enabled: false,
+      delaySec: 10,
+      flaggedApps: [],
+    },
+  ];
+}
+
 const store = new Store({
   defaults: {
     buttonPosition: { x: 100, y: 100 },
@@ -8,17 +26,7 @@ const store = new Store({
     cancelWindowSeconds: 2,
     buttonOpacity: 0.4,
     buttonColor: '#D9534F',
-    triggers: {
-      idle: {
-        enabled: false,
-        thresholdSec: 300,
-      },
-      appDetection: {
-        enabled: false,
-        delaySec: 10,
-        flaggedApps: [],
-      },
-    },
+    triggers: defaultTriggersArray(),
   },
 });
 
@@ -75,31 +83,94 @@ function getTriggerConfig() {
 }
 
 function setTriggerConfig(config) {
+  if (!Array.isArray(config)) {
+    console.warn('siren-guard: setTriggerConfig expected array, ignoring');
+    return;
+  }
   store.set('triggers', config);
 }
 
+function getTriggerById(id) {
+  const triggers = store.get('triggers');
+  if (!Array.isArray(triggers)) {
+    return undefined;
+  }
+  return triggers.find((t) => t.id === id);
+}
+
+function setTriggerById(id, partial) {
+  const triggers = store.get('triggers');
+  if (!Array.isArray(triggers)) {
+    return;
+  }
+  const next = triggers.map((t) => (t.id === id ? { ...t, ...partial } : t));
+  store.set('triggers', next);
+}
+
 function getIdleTrigger() {
-  return store.get('triggers.idle');
+  return getTriggerById('idle');
 }
 
 function setIdleTrigger(config) {
-  store.set('triggers.idle', config);
+  setTriggerById('idle', config);
 }
 
 function getAppDetectionTrigger() {
-  return store.get('triggers.appDetection');
+  return getTriggerById('app-detection');
 }
 
 function setAppDetectionTrigger(config) {
-  store.set('triggers.appDetection', config);
+  setTriggerById('app-detection', config);
 }
 
 function getFlaggedApps() {
-  return store.get('triggers.appDetection.flaggedApps');
+  const trigger = getAppDetectionTrigger();
+  return trigger?.flaggedApps ?? [];
 }
 
 function setFlaggedApps(apps) {
-  store.set('triggers.appDetection.flaggedApps', apps);
+  setTriggerById('app-detection', { flaggedApps: apps });
+}
+
+function migrateTriggersSchema() {
+  const current = store.get('triggers');
+
+  if (Array.isArray(current)) {
+    return;
+  }
+
+  let next;
+  if (current && typeof current === 'object') {
+    if (!current.idle && !current.appDetection) {
+      console.warn('siren-guard: unrecognized triggers shape, resetting to defaults');
+      next = defaultTriggersArray();
+    } else {
+      const idle = current.idle || {};
+      const appDetection = current.appDetection || {};
+      next = [
+        {
+          id: 'idle',
+          name: 'Idle-timer',
+          enabled: !!idle.enabled,
+          thresholdSec: Number(idle.thresholdSec) || 300,
+        },
+        {
+          id: 'app-detection',
+          name: 'App-detection',
+          enabled: !!appDetection.enabled,
+          delaySec: Number(appDetection.delaySec) || 10,
+          flaggedApps: Array.isArray(appDetection.flaggedApps)
+            ? appDetection.flaggedApps
+            : [],
+        },
+      ];
+    }
+  } else {
+    console.warn('siren-guard: unrecognized triggers shape, resetting to defaults');
+    next = defaultTriggersArray();
+  }
+
+  store.set('triggers', next);
 }
 
 module.exports = {
@@ -117,10 +188,13 @@ module.exports = {
   setButtonColor,
   getTriggerConfig,
   setTriggerConfig,
+  getTriggerById,
+  setTriggerById,
   getIdleTrigger,
   setIdleTrigger,
   getAppDetectionTrigger,
   setAppDetectionTrigger,
   getFlaggedApps,
   setFlaggedApps,
+  migrateTriggersSchema,
 };

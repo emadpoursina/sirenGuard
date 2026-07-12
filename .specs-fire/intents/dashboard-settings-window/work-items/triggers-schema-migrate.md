@@ -4,9 +4,12 @@ title: Triggers schema migrate to array
 intent: dashboard-settings-window
 complexity: high
 mode: validate
-status: pending
-depends_on: [settings-store-expand]
+status: completed
+depends_on:
+  - settings-store-expand
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-002
+completed_at: 2026-07-12T07:41:04.074Z
 ---
 
 # Work Item: Triggers schema migrate to array
