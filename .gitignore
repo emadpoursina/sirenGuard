@@ -3,3 +3,8 @@ dist/
 out/
 .DS_Store
 scratch/
+# Personal AiNative symlinks (machine-local)
+.cursor/rules/personal
+docs/8. agents
+docs/2. ai-workflows
+
