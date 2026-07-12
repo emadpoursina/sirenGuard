@@ -16,6 +16,64 @@ workspace:
   scanned_at: "2026-07-03T07:19:00-07:00"
 
 intents:
+  - id: dashboard-settings-window
+    title: Dashboard / Settings window
+    status: in_progress
+    work_items:
+      - id: settings-store-expand
+        title: Settings store expand
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on: []
+      - id: triggers-schema-migrate
+        title: Triggers schema migrate to array
+        status: pending
+        complexity: high
+        mode: validate
+        depends_on: [settings-store-expand]
+      - id: cancel-window-wiring
+        title: Wire cancel window duration into lock-orchestration
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [settings-store-expand]
+      - id: settings-ipc-refactor
+        title: Settings IPC refactor
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [triggers-schema-migrate]
+      - id: dashboard-shell
+        title: Dashboard window shell
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on: [settings-ipc-refactor]
+      - id: dashboard-general-section
+        title: Dashboard General section
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [dashboard-shell]
+      - id: dashboard-button-section
+        title: Dashboard Trigger Button section
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [dashboard-shell, cancel-window-wiring]
+      - id: dashboard-triggers-section
+        title: Dashboard Triggers section
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: [dashboard-shell, triggers-schema-migrate]
+      - id: dashboard-about-section
+        title: Dashboard About / Data section
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on: [dashboard-shell]
   - id: triggers-and-settings
     title: Multiple trigger types and settings screen
     status: completed
