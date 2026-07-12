@@ -4,9 +4,12 @@ title: Dashboard window shell
 intent: dashboard-settings-window
 complexity: low
 mode: autopilot
-status: pending
-depends_on: [settings-ipc-refactor]
+status: completed
+depends_on:
+  - settings-ipc-refactor
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-004
+completed_at: 2026-07-12T07:46:47.147Z
 ---
 
 # Work Item: Dashboard window shell

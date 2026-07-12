@@ -27,8 +27,8 @@ const appDetectionTrigger = require('./app-detection-trigger');
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
 
-const SETTINGS_WIDTH = 380;
-const SETTINGS_HEIGHT = 560;
+const SETTINGS_WIDTH = 400;
+const SETTINGS_HEIGHT = 640;
 const RUNNING_APPS_NAME_QUERY =
   'tell application "System Events" to get name of every process whose background only is false';
 const RUNNING_APPS_BUNDLE_QUERY =

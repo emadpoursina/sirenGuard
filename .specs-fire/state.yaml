@@ -55,11 +55,13 @@ intents:
         completed_at: 2026-07-12T07:45:11.249Z
       - id: dashboard-shell
         title: Dashboard window shell
-        status: pending
+        status: completed
         complexity: low
         mode: autopilot
         depends_on:
           - settings-ipc-refactor
+        run_id: run-sirenguard-004
+        completed_at: 2026-07-12T07:46:47.147Z
       - id: dashboard-general-section
         title: Dashboard General section
         status: pending
@@ -181,3 +183,11 @@ runs:
           mode: confirm
       started: 2026-07-12T07:44:10.520Z
       completed: 2026-07-12T07:45:11.249Z
+    - id: run-sirenguard-004
+      scope: single
+      work_items:
+        - id: dashboard-shell
+          intent: dashboard-settings-window
+          mode: autopilot
+      started: 2026-07-12T07:46:19.550Z
+      completed: 2026-07-12T07:46:47.147Z
