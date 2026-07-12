@@ -4,6 +4,10 @@ const store = new Store({
   defaults: {
     buttonPosition: { x: 100, y: 100 },
     launchAtLogin: false,
+    startMinimized: false,
+    cancelWindowSeconds: 2,
+    buttonOpacity: 0.4,
+    buttonColor: '#D9534F',
     triggers: {
       idle: {
         enabled: false,
@@ -32,6 +36,38 @@ function getLaunchAtLogin() {
 
 function setLaunchAtLogin(enabled) {
   store.set('launchAtLogin', enabled);
+}
+
+function getStartMinimized() {
+  return store.get('startMinimized');
+}
+
+function setStartMinimized(enabled) {
+  store.set('startMinimized', enabled);
+}
+
+function getCancelWindowSeconds() {
+  return store.get('cancelWindowSeconds');
+}
+
+function setCancelWindowSeconds(seconds) {
+  store.set('cancelWindowSeconds', seconds);
+}
+
+function getButtonOpacity() {
+  return store.get('buttonOpacity');
+}
+
+function setButtonOpacity(opacity) {
+  store.set('buttonOpacity', opacity);
+}
+
+function getButtonColor() {
+  return store.get('buttonColor');
+}
+
+function setButtonColor(color) {
+  store.set('buttonColor', color);
 }
 
 function getTriggerConfig() {
@@ -71,6 +107,14 @@ module.exports = {
   setButtonPosition,
   getLaunchAtLogin,
   setLaunchAtLogin,
+  getStartMinimized,
+  setStartMinimized,
+  getCancelWindowSeconds,
+  setCancelWindowSeconds,
+  getButtonOpacity,
+  setButtonOpacity,
+  getButtonColor,
+  setButtonColor,
   getTriggerConfig,
   setTriggerConfig,
   getIdleTrigger,

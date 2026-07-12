@@ -1,9 +1,8 @@
 project:
-  name: "siren-guard"
-  description: "macOS menu-bar utility with a floating lock button"
-  created: "2026-07-03T07:19:00-07:00"
-  fire_version: "0.1.8"
-
+  name: siren-guard
+  description: macOS menu-bar utility with a floating lock button
+  created: 2026-07-03T07:19:00-07:00
+  fire_version: 0.1.8
 workspace:
   type: brownfield
   structure: monolith
@@ -12,9 +11,8 @@ workspace:
   run_scope_history:
     - choice: batch
       items_count: 3
-      timestamp: "2026-07-03T08:08:00-07:00"
-  scanned_at: "2026-07-03T07:19:00-07:00"
-
+      timestamp: 2026-07-03T08:08:00-07:00
+  scanned_at: 2026-07-03T07:19:00-07:00
 intents:
   - id: dashboard-settings-window
     title: Dashboard / Settings window
@@ -22,58 +20,70 @@ intents:
     work_items:
       - id: settings-store-expand
         title: Settings store expand
-        status: pending
+        status: completed
         complexity: low
         mode: autopilot
         depends_on: []
+        run_id: run-sirenguard-001
+        completed_at: 2026-07-12T07:38:46.269Z
       - id: triggers-schema-migrate
         title: Triggers schema migrate to array
         status: pending
         complexity: high
         mode: validate
-        depends_on: [settings-store-expand]
+        depends_on:
+          - settings-store-expand
       - id: cancel-window-wiring
         title: Wire cancel window duration into lock-orchestration
         status: pending
         complexity: medium
         mode: confirm
-        depends_on: [settings-store-expand]
+        depends_on:
+          - settings-store-expand
       - id: settings-ipc-refactor
         title: Settings IPC refactor
         status: pending
         complexity: medium
         mode: confirm
-        depends_on: [triggers-schema-migrate]
+        depends_on:
+          - triggers-schema-migrate
       - id: dashboard-shell
         title: Dashboard window shell
         status: pending
         complexity: low
         mode: autopilot
-        depends_on: [settings-ipc-refactor]
+        depends_on:
+          - settings-ipc-refactor
       - id: dashboard-general-section
         title: Dashboard General section
         status: pending
         complexity: medium
         mode: confirm
-        depends_on: [dashboard-shell]
+        depends_on:
+          - dashboard-shell
       - id: dashboard-button-section
         title: Dashboard Trigger Button section
         status: pending
         complexity: medium
         mode: confirm
-        depends_on: [dashboard-shell, cancel-window-wiring]
+        depends_on:
+          - dashboard-shell
+          - cancel-window-wiring
       - id: dashboard-triggers-section
         title: Dashboard Triggers section
         status: pending
         complexity: medium
         mode: confirm
-        depends_on: [dashboard-shell, triggers-schema-migrate]
+        depends_on:
+          - dashboard-shell
+          - triggers-schema-migrate
       - id: dashboard-about-section
         title: Dashboard About / Data section
         status: pending
         complexity: low
         mode: autopilot
-        depends_on: [dashboard-shell]
+        depends_on:
+          - dashboard-shell
   - id: triggers-and-settings
     title: Multiple trigger types and settings screen
     status: completed
@@ -85,7 +95,7 @@ intents:
         mode: validate
         depends_on: []
         run_id: run-sirenguard-2026-002
-        completed_at: "2026-07-03T07:48:00-07:00"
+        completed_at: 2026-07-03T07:48:00-07:00
       - id: trigger-config-store
         title: Trigger config store
         status: completed
@@ -93,45 +103,56 @@ intents:
         mode: autopilot
         depends_on: []
         run_id: run-sirenguard-2026-001
-        completed_at: "2026-07-03T07:42:00-07:00"
+        completed_at: 2026-07-03T07:42:00-07:00
       - id: idle-timer-trigger
         title: Idle-timer trigger
         status: completed
         complexity: medium
         mode: confirm
-        depends_on: [lock-orchestration, trigger-config-store]
+        depends_on:
+          - lock-orchestration
+          - trigger-config-store
         run_id: run-sirenguard-2026-003
-        completed_at: "2026-07-03T08:25:00-07:00"
+        completed_at: 2026-07-03T08:25:00-07:00
       - id: app-detection-trigger
         title: App-detection trigger
         status: completed
         complexity: medium
         mode: confirm
-        depends_on: [lock-orchestration, trigger-config-store]
+        depends_on:
+          - lock-orchestration
+          - trigger-config-store
         run_id: run-sirenguard-2026-003
-        completed_at: "2026-07-03T08:25:00-07:00"
+        completed_at: 2026-07-03T08:25:00-07:00
       - id: settings-window
         title: Settings window
         status: completed
         complexity: medium
         mode: confirm
-        depends_on: [trigger-config-store]
+        depends_on:
+          - trigger-config-store
         run_id: run-sirenguard-2026-003
-        completed_at: "2026-07-03T08:25:00-07:00"
-
-
+        completed_at: 2026-07-03T08:25:00-07:00
 runs:
   active: []
   completed:
     - id: run-sirenguard-2026-001
       work_item: trigger-config-store
       intent: triggers-and-settings
-      completed: "2026-07-03T07:42:00-07:00"
+      completed: 2026-07-03T07:42:00-07:00
     - id: run-sirenguard-2026-002
       work_item: lock-orchestration
       intent: triggers-and-settings
-      completed: "2026-07-03T07:48:00-07:00"
+      completed: 2026-07-03T07:48:00-07:00
     - id: run-sirenguard-2026-003
       work_item: idle-timer-trigger, app-detection-trigger, settings-window
       intent: triggers-and-settings
-      completed: "2026-07-03T08:25:00-07:00"
+      completed: 2026-07-03T08:25:00-07:00
+    - id: run-sirenguard-001
+      scope: single
+      work_items:
+        - id: settings-store-expand
+          intent: dashboard-settings-window
+          mode: autopilot
+      started: 2026-07-12T07:38:04.333Z
+      completed: 2026-07-12T07:38:46.269Z
