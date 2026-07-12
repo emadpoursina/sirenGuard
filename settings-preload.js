@@ -5,10 +5,11 @@ contextBridge.exposeInMainWorld('sirenGuardSettings', {
   updateSettings: (partial) => ipcRenderer.invoke('settings:update', partial),
   resetButtonPosition: () => ipcRenderer.invoke('button:reset-position'),
   resetSettings: () => ipcRenderer.invoke('settings:reset'),
+  setLaunchAtLogin: (enabled) => ipcRenderer.invoke('settings:set-launch-at-login', enabled),
+  getMeta: () => ipcRenderer.invoke('settings:get-meta'),
+  revealConfig: () => ipcRenderer.invoke('settings:reveal-config'),
   onSettingsChanged: (callback) => {
     ipcRenderer.on('settings:changed', (_event, settings) => callback(settings));
   },
-  getTriggerConfig: () => ipcRenderer.invoke('get-trigger-config'),
-  setTriggerConfig: (config) => ipcRenderer.invoke('set-trigger-config', config),
   getRunningApps: () => ipcRenderer.invoke('get-running-apps'),
 });

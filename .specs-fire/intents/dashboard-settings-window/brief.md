@@ -1,8 +1,9 @@
 ---
 id: dashboard-settings-window
 title: Dashboard / Settings window
-status: in_progress
+status: completed
 created: 2026-07-12T00:31:00-07:00
+completed_at: 2026-07-12T07:49:18.037Z
 ---
 
 # Intent: Dashboard / Settings window

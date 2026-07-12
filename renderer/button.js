@@ -1,10 +1,19 @@
 const CLICK_THRESHOLD_MS = 200;
 
+const dragRegion = document.getElementById('drag-region');
 const lockButton = document.getElementById('lock-button');
 const countdownRing = document.getElementById('countdown-ring');
 
 let mouseDownAt = null;
 let armed = false;
+
+function applyButtonStyles(settings) {
+  if (!settings) return;
+  const opacity = settings.buttonOpacity != null ? settings.buttonOpacity : 0.4;
+  const color = settings.buttonColor || '#D9534F';
+  dragRegion.style.setProperty('--button-opacity', String(opacity));
+  dragRegion.style.setProperty('--button-color', color);
+}
 
 function setArmed(isArmed) {
   armed = isArmed;
@@ -42,3 +51,6 @@ lockButton.addEventListener('mouseup', () => {
 
   window.sirenGuard.arm();
 });
+
+window.sirenGuard.onSettingsChanged(applyButtonStyles);
+window.sirenGuard.getSettings().then(applyButtonStyles);

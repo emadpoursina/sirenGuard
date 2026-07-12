@@ -4,9 +4,12 @@ title: Dashboard About / Data section
 intent: dashboard-settings-window
 complexity: low
 mode: autopilot
-status: pending
-depends_on: [dashboard-shell]
+status: completed
+depends_on:
+  - dashboard-shell
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-005
+completed_at: 2026-07-12T07:49:18.028Z
 ---
 
 # Work Item: Dashboard About / Data section

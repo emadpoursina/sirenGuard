@@ -193,6 +193,10 @@ function resetSettings() {
   store.clear();
 }
 
+function getStorePath() {
+  return store.path;
+}
+
 function migrateTriggersSchema() {
   const current = store.get('triggers');
 
@@ -261,4 +265,5 @@ module.exports = {
   getAllSettings,
   updateSettings,
   resetSettings,
+  getStorePath,
 };

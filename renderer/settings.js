@@ -2,6 +2,7 @@ const savedIndicator = document.getElementById('saved-indicator');
 
 let currentSettings = null;
 let savedTimeout = null;
+const sectionHandlers = new Map();
 
 function showSaved() {
   savedIndicator.hidden = false;
@@ -20,9 +21,18 @@ async function updateSettings(partial) {
   return currentSettings;
 }
 
+function notifySections(settings) {
+  sectionHandlers.forEach((handler) => {
+    handler(settings);
+  });
+}
+
 window.dashboard = {
   getSettings: () => currentSettings,
   updateSettings,
+  registerSection: (id, handler) => {
+    sectionHandlers.set(id, handler);
+  },
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -30,5 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.sirenGuardSettings.onSettingsChanged((settings) => {
     currentSettings = settings;
+    notifySections(settings);
   });
+
+  initGeneralSection();
+  initButtonSection();
+  initTriggersSection();
+  initAboutSection();
 });

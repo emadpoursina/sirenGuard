@@ -20,6 +20,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  --button-opacity: 0.4;
+  --button-color: #d9534f;
 }
 
 .lock-button {
@@ -28,21 +30,24 @@ body {
   height: 48px;
   border: none;
   border-radius: 50%;
-  background: rgba(180, 70, 40, 0.45);
+  background: var(--button-color);
+  opacity: var(--button-opacity);
   cursor: pointer;
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .lock-button:hover {
-  background: rgba(200, 85, 45, 0.6);
+  opacity: calc(var(--button-opacity) + 0.15);
 }
 
 .lock-button.armed {
-  background: rgba(220, 60, 40, 0.85);
+  opacity: 1;
+  background: var(--button-color);
+  filter: brightness(1.1);
   animation: pulse 0.6s ease-in-out infinite alternate;
 }
 

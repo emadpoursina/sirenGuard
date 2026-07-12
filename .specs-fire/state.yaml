@@ -64,34 +64,42 @@ intents:
         completed_at: 2026-07-12T07:46:47.147Z
       - id: dashboard-general-section
         title: Dashboard General section
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - dashboard-shell
+        run_id: run-sirenguard-005
+        completed_at: 2026-07-12T07:49:18.028Z
       - id: dashboard-button-section
         title: Dashboard Trigger Button section
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - dashboard-shell
           - cancel-window-wiring
+        run_id: run-sirenguard-005
+        completed_at: 2026-07-12T07:49:18.028Z
       - id: dashboard-triggers-section
         title: Dashboard Triggers section
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - dashboard-shell
           - triggers-schema-migrate
+        run_id: run-sirenguard-005
+        completed_at: 2026-07-12T07:49:18.028Z
       - id: dashboard-about-section
         title: Dashboard About / Data section
-        status: pending
+        status: completed
         complexity: low
         mode: autopilot
         depends_on:
           - dashboard-shell
+        run_id: run-sirenguard-005
+        completed_at: 2026-07-12T07:49:18.028Z
   - id: triggers-and-settings
     title: Multiple trigger types and settings screen
     status: completed
@@ -191,3 +199,20 @@ runs:
           mode: autopilot
       started: 2026-07-12T07:46:19.550Z
       completed: 2026-07-12T07:46:47.147Z
+    - id: run-sirenguard-005
+      scope: batch
+      work_items:
+        - id: dashboard-general-section
+          intent: dashboard-settings-window
+          mode: confirm
+        - id: dashboard-button-section
+          intent: dashboard-settings-window
+          mode: confirm
+        - id: dashboard-triggers-section
+          intent: dashboard-settings-window
+          mode: confirm
+        - id: dashboard-about-section
+          intent: dashboard-settings-window
+          mode: autopilot
+      started: 2026-07-12T07:47:58.609Z
+      completed: 2026-07-12T07:49:18.028Z

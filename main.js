@@ -7,6 +7,7 @@ const {
   Menu,
   ipcMain,
   nativeImage,
+  shell,
 } = require('electron');
 const {
   getButtonPosition,
@@ -19,6 +20,8 @@ const {
   getAllSettings,
   updateSettings,
   resetSettings,
+  getStartMinimized,
+  getStorePath,
 } = require('./store');
 const lockOrchestration = require('./lock-orchestration');
 const idleTrigger = require('./idle-trigger');
@@ -28,7 +31,7 @@ const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
 
 const SETTINGS_WIDTH = 400;
-const SETTINGS_HEIGHT = 640;
+const SETTINGS_HEIGHT = 780;
 const RUNNING_APPS_NAME_QUERY =
   'tell application "System Events" to get name of every process whose background only is false';
 const RUNNING_APPS_BUNDLE_QUERY =
@@ -71,6 +74,16 @@ function createFloatingWindow() {
     const [x, y] = floatingWindow.getPosition();
     setButtonPosition({ x, y });
   });
+
+  if (getStartMinimized()) {
+    floatingWindow.hide();
+  }
+}
+
+function showFloatingWindow() {
+  if (floatingWindow && !floatingWindow.isDestroyed()) {
+    floatingWindow.show();
+  }
 }
 
 function runAppleScript(script) {
@@ -187,8 +200,9 @@ function buildTrayMenu() {
         const applied = applyLaunchAtLogin(menuItem.checked);
         if (!applied) {
           menuItem.checked = getLaunchAtLoginState();
-          tray.setContextMenu(buildTrayMenu());
         }
+        tray.setContextMenu(buildTrayMenu());
+        broadcastSettingsChanged();
       },
     },
     { type: 'separator' },
@@ -208,6 +222,9 @@ function createTray() {
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
   tray.setToolTip('Siren Guard');
   tray.setContextMenu(buildTrayMenu());
+  tray.on('click', () => {
+    showFloatingWindow();
+  });
 }
 
 function broadcastSettingsChanged() {
@@ -287,7 +304,10 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('settings:get', () => {
-    return getAllSettings();
+    return {
+      ...getAllSettings(),
+      launchAtLogin: getLaunchAtLoginState(),
+    };
   });
 
   ipcMain.handle('settings:update', (_event, partial) => {
@@ -310,6 +330,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle('settings:reset', () => {
     resetSettings();
+    migrateTriggersSchema();
     if (floatingWindow && !floatingWindow.isDestroyed()) {
       const position = getButtonPosition();
       floatingWindow.setPosition(position.x, position.y);
@@ -319,6 +340,30 @@ function registerIpcHandlers() {
     }
     broadcastSettingsChanged();
     return getAllSettings();
+  });
+
+  ipcMain.handle('settings:set-launch-at-login', (_event, enabled) => {
+    const applied = applyLaunchAtLogin(Boolean(enabled));
+    if (!applied && !app.isPackaged) {
+      return { applied: false, launchAtLogin: getLaunchAtLogin() };
+    }
+    if (tray) {
+      tray.setContextMenu(buildTrayMenu());
+    }
+    broadcastSettingsChanged();
+    return { applied: true, launchAtLogin: getLaunchAtLoginState() };
+  });
+
+  ipcMain.handle('settings:get-meta', () => {
+    return {
+      version: app.getVersion(),
+      configPath: getStorePath(),
+      isPackaged: app.isPackaged,
+    };
+  });
+
+  ipcMain.handle('settings:reveal-config', () => {
+    shell.showItemInFolder(getStorePath());
   });
 }
 

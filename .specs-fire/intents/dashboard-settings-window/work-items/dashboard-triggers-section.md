@@ -4,9 +4,13 @@ title: Dashboard Triggers section
 intent: dashboard-settings-window
 complexity: medium
 mode: confirm
-status: pending
-depends_on: [dashboard-shell, triggers-schema-migrate]
+status: completed
+depends_on:
+  - dashboard-shell
+  - triggers-schema-migrate
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-005
+completed_at: 2026-07-12T07:49:17.851Z
 ---
 
 # Work Item: Dashboard Triggers section
