@@ -266,4 +266,5 @@ module.exports = {
   updateSettings,
   resetSettings,
   getStorePath,
+  defaultTriggersArray,
 };
