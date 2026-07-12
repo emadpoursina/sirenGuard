@@ -4,9 +4,11 @@ title: Lock/cancel orchestration refactor
 intent: triggers-and-settings
 complexity: high
 mode: validate
-status: pending
+status: completed
 depends_on: []
 created: 2026-07-03T07:39:00-07:00
+run_id: run-sirenguard-2026-002
+completed_at: 2026-07-03T07:48:00-07:00
 ---
 
 # Work Item: Lock/cancel orchestration refactor

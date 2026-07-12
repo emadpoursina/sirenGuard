@@ -1,8 +1,9 @@
 ---
 id: triggers-and-settings
 title: Multiple trigger types and settings screen
-status: in_progress
+status: completed
 created: 2026-07-03T07:37:00-07:00
+completed_at: 2026-07-03T08:25:00-07:00
 ---
 
 # Intent: Multiple trigger types and settings screen

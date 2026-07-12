@@ -4,9 +4,11 @@ title: Idle-timer trigger
 intent: triggers-and-settings
 complexity: medium
 mode: confirm
-status: pending
+status: completed
 depends_on: [lock-orchestration, trigger-config-store]
 created: 2026-07-03T07:39:00-07:00
+run_id: run-sirenguard-2026-003
+completed_at: 2026-07-03T08:25:00-07:00
 ---
 
 # Work Item: Idle-timer trigger

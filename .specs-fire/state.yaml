@@ -25,36 +25,41 @@ intents:
         status: completed
         complexity: high
         mode: validate
-        checkpoint_1: approved
-        current_phase: review
         depends_on: []
+        run_id: run-sirenguard-2026-002
+        completed_at: "2026-07-03T07:48:00-07:00"
       - id: trigger-config-store
         title: Trigger config store
         status: completed
         complexity: low
         mode: autopilot
         depends_on: []
+        run_id: run-sirenguard-2026-001
+        completed_at: "2026-07-03T07:42:00-07:00"
       - id: idle-timer-trigger
         title: Idle-timer trigger
         status: completed
         complexity: medium
         mode: confirm
-        current_phase: review
         depends_on: [lock-orchestration, trigger-config-store]
+        run_id: run-sirenguard-2026-003
+        completed_at: "2026-07-03T08:25:00-07:00"
       - id: app-detection-trigger
         title: App-detection trigger
         status: completed
         complexity: medium
         mode: confirm
-        current_phase: review
         depends_on: [lock-orchestration, trigger-config-store]
+        run_id: run-sirenguard-2026-003
+        completed_at: "2026-07-03T08:25:00-07:00"
       - id: settings-window
         title: Settings window
         status: completed
         complexity: medium
         mode: confirm
-        current_phase: review
         depends_on: [trigger-config-store]
+        run_id: run-sirenguard-2026-003
+        completed_at: "2026-07-03T08:25:00-07:00"
 
 
 runs:
