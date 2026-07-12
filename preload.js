@@ -6,6 +6,9 @@ contextBridge.exposeInMainWorld('sirenGuard', {
   onArmedState: (callback) => {
     ipcRenderer.on('armed-state', (_event, payload) => callback(payload));
   },
+  onSettingsChanged: (callback) => {
+    ipcRenderer.on('settings:changed', (_event, settings) => callback(settings));
+  },
   savePosition: (position) => ipcRenderer.invoke('save-position', position),
   getPosition: () => ipcRenderer.invoke('get-position'),
 });

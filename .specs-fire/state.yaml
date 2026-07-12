@@ -37,18 +37,22 @@ intents:
         completed_at: 2026-07-12T07:41:04.074Z
       - id: cancel-window-wiring
         title: Wire cancel window duration into lock-orchestration
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - settings-store-expand
+        run_id: run-sirenguard-003
+        completed_at: 2026-07-12T07:45:11.249Z
       - id: settings-ipc-refactor
         title: Settings IPC refactor
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - triggers-schema-migrate
+        run_id: run-sirenguard-003
+        completed_at: 2026-07-12T07:45:11.249Z
       - id: dashboard-shell
         title: Dashboard window shell
         status: pending
@@ -166,3 +170,14 @@ runs:
           mode: validate
       started: 2026-07-12T07:40:13.979Z
       completed: 2026-07-12T07:41:04.074Z
+    - id: run-sirenguard-003
+      scope: batch
+      work_items:
+        - id: cancel-window-wiring
+          intent: dashboard-settings-window
+          mode: confirm
+        - id: settings-ipc-refactor
+          intent: dashboard-settings-window
+          mode: confirm
+      started: 2026-07-12T07:44:10.520Z
+      completed: 2026-07-12T07:45:11.249Z

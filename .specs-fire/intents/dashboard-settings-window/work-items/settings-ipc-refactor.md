@@ -4,9 +4,12 @@ title: Settings IPC refactor
 intent: dashboard-settings-window
 complexity: medium
 mode: confirm
-status: pending
-depends_on: [triggers-schema-migrate]
+status: completed
+depends_on:
+  - triggers-schema-migrate
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-003
+completed_at: 2026-07-12T07:45:11.249Z
 ---
 
 # Work Item: Settings IPC refactor

@@ -16,6 +16,9 @@ const {
   getTriggerConfig,
   setTriggerConfig,
   migrateTriggersSchema,
+  getAllSettings,
+  updateSettings,
+  resetSettings,
 } = require('./store');
 const lockOrchestration = require('./lock-orchestration');
 const idleTrigger = require('./idle-trigger');
@@ -30,6 +33,8 @@ const RUNNING_APPS_NAME_QUERY =
   'tell application "System Events" to get name of every process whose background only is false';
 const RUNNING_APPS_BUNDLE_QUERY =
   'tell application "System Events" to get bundle identifier of every process whose background only is false';
+
+const DEFAULT_BUTTON_POSITION = { x: 100, y: 100 };
 
 let tray = null;
 let floatingWindow = null;
@@ -205,6 +210,15 @@ function createTray() {
   tray.setContextMenu(buildTrayMenu());
 }
 
+function broadcastSettingsChanged() {
+  const settings = getAllSettings();
+  [floatingWindow, settingsWindow].forEach((win) => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('settings:changed', settings);
+    }
+  });
+}
+
 function triggersArrayToLegacyObject(triggers) {
   const idle = triggers.find((t) => t.id === 'idle') || {};
   const appDetection = triggers.find((t) => t.id === 'app-detection') || {};
@@ -270,6 +284,41 @@ function registerIpcHandlers() {
 
   ipcMain.handle('get-running-apps', async () => {
     return getRunningApps();
+  });
+
+  ipcMain.handle('settings:get', () => {
+    return getAllSettings();
+  });
+
+  ipcMain.handle('settings:update', (_event, partial) => {
+    updateSettings(partial);
+    broadcastSettingsChanged();
+    return getAllSettings();
+  });
+
+  ipcMain.handle('button:reset-position', () => {
+    setButtonPosition(DEFAULT_BUTTON_POSITION);
+    if (floatingWindow && !floatingWindow.isDestroyed()) {
+      floatingWindow.setPosition(
+        DEFAULT_BUTTON_POSITION.x,
+        DEFAULT_BUTTON_POSITION.y
+      );
+    }
+    broadcastSettingsChanged();
+    return getAllSettings();
+  });
+
+  ipcMain.handle('settings:reset', () => {
+    resetSettings();
+    if (floatingWindow && !floatingWindow.isDestroyed()) {
+      const position = getButtonPosition();
+      floatingWindow.setPosition(position.x, position.y);
+    }
+    if (tray) {
+      tray.setContextMenu(buildTrayMenu());
+    }
+    broadcastSettingsChanged();
+    return getAllSettings();
   });
 }
 

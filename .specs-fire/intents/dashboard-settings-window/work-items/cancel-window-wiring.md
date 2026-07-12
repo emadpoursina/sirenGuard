@@ -4,9 +4,12 @@ title: Wire cancel window duration into lock-orchestration
 intent: dashboard-settings-window
 complexity: medium
 mode: confirm
-status: pending
-depends_on: [settings-store-expand]
+status: completed
+depends_on:
+  - settings-store-expand
 created: 2026-07-12T00:31:00-07:00
+run_id: run-sirenguard-003
+completed_at: 2026-07-12T07:45:02.529Z
 ---
 
 # Work Item: Wire cancel window duration into lock-orchestration

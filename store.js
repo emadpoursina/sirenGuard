@@ -132,6 +132,67 @@ function setFlaggedApps(apps) {
   setTriggerById('app-detection', { flaggedApps: apps });
 }
 
+function getAllSettings() {
+  return {
+    buttonPosition: getButtonPosition(),
+    launchAtLogin: getLaunchAtLogin(),
+    startMinimized: getStartMinimized(),
+    cancelWindowSeconds: getCancelWindowSeconds(),
+    buttonOpacity: getButtonOpacity(),
+    buttonColor: getButtonColor(),
+    triggers: getTriggerConfig(),
+  };
+}
+
+function updateSettings(partial) {
+  if (!partial || typeof partial !== 'object') {
+    return;
+  }
+
+  if (partial.buttonPosition !== undefined) {
+    setButtonPosition(partial.buttonPosition);
+  }
+  if (partial.launchAtLogin !== undefined) {
+    setLaunchAtLogin(partial.launchAtLogin);
+  }
+  if (partial.startMinimized !== undefined) {
+    setStartMinimized(partial.startMinimized);
+  }
+  if (partial.cancelWindowSeconds !== undefined) {
+    setCancelWindowSeconds(partial.cancelWindowSeconds);
+  }
+  if (partial.buttonOpacity !== undefined) {
+    setButtonOpacity(partial.buttonOpacity);
+  }
+  if (partial.buttonColor !== undefined) {
+    setButtonColor(partial.buttonColor);
+  }
+  if (partial.triggers !== undefined && Array.isArray(partial.triggers)) {
+    const current = getTriggerConfig();
+    if (!Array.isArray(current)) {
+      setTriggerConfig(partial.triggers);
+      return;
+    }
+
+    const merged = current.map((entry) => {
+      const update = partial.triggers.find((t) => t.id === entry.id);
+      return update ? { ...entry, ...update } : entry;
+    });
+
+    partial.triggers.forEach((t) => {
+      if (t.id && !merged.some((m) => m.id === t.id)) {
+        merged.push(t);
+      }
+    });
+
+    setTriggerConfig(merged);
+  }
+}
+
+function resetSettings() {
+  store.clear();
+}
+
 function migrateTriggersSchema() {
   const current = store.get('triggers');
 
@@ -197,4 +258,7 @@ module.exports = {
   getFlaggedApps,
   setFlaggedApps,
   migrateTriggersSchema,
+  getAllSettings,
+  updateSettings,
+  resetSettings,
 };

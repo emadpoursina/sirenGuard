@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
+const { getCancelWindowSeconds } = require('./store');
 
-const CANCEL_WINDOW_MS = 2000;
+const DEFAULT_CANCEL_WINDOW_MS = 2000;
 const ARMED_EVENT = 'armed-state';
 
 const LOCK_COMMAND = 'open -a ScreenSaverEngine';
@@ -29,6 +30,14 @@ function lockScreen() {
   });
 }
 
+function getCancelWindowMs() {
+  const seconds = Number(getCancelWindowSeconds());
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return DEFAULT_CANCEL_WINDOW_MS;
+  }
+  return seconds * 1000;
+}
+
 function arm() {
   clearTimer();
   emitArmed(true);
@@ -37,7 +46,7 @@ function arm() {
     timer = null;
     emitArmed(false);
     lockScreen();
-  }, CANCEL_WINDOW_MS);
+  }, getCancelWindowMs());
 }
 
 function cancel() {
