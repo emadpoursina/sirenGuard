@@ -41,13 +41,25 @@
       #confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
       #cancel-btn { background: #444; color: #fff; }
       .error { color: #ff8a80; font-size: 12px; min-height: 18px; }
+      .phrase-target {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        background: #2a2a2a;
+        border: 1px solid #555;
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        word-break: break-word;
+      }
     </style>
   </head>
   <body>
     <h1>Confirm this action</h1>
-    <p id="subtitle">Wait for the countdown, then type your confirmation phrase.</p>
+    <p id="subtitle">Wait for the countdown, then type exactly:</p>
+    <p class="phrase-target" id="phrase-target" hidden></p>
     <div class="countdown" id="countdown">30</div>
-    <input id="phrase-input" type="password" placeholder="Confirmation phrase" disabled />
+    <input id="phrase-input" type="text" placeholder="Type the phrase above" disabled autocomplete="off" spellcheck="false" />
     <div class="error" id="error"></div>
     <div class="actions">
       <button id="cancel-btn" type="button">Cancel</button>

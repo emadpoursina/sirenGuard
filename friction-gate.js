@@ -47,6 +47,7 @@ function showFrictionWindow(action) {
         kind: action.kind,
         countdownSec: FRICTION_COUNTDOWN_SEC,
         phraseRequired: Boolean(getConfirmationPhrase()),
+        confirmationPhrase: getConfirmationPhrase(),
       });
     }
   });
