@@ -15,6 +15,13 @@ function defaultTriggersArray() {
       delaySec: 10,
       flaggedApps: [],
     },
+    {
+      id: 'website-detection',
+      name: 'Website-detection',
+      enabled: false,
+      delaySec: 10,
+      targets: [],
+    },
   ];
 }
 
@@ -26,6 +33,7 @@ const store = new Store({
     cancelWindowSeconds: 2,
     buttonOpacity: 0.4,
     buttonColor: '#D9534F',
+    websiteServerPort: 45117,
     triggers: defaultTriggersArray(),
   },
 });
@@ -132,6 +140,31 @@ function setFlaggedApps(apps) {
   setTriggerById('app-detection', { flaggedApps: apps });
 }
 
+function getWebsiteDetectionTrigger() {
+  return getTriggerById('website-detection');
+}
+
+function setWebsiteDetectionTrigger(config) {
+  setTriggerById('website-detection', config);
+}
+
+function getWebsiteTargets() {
+  const trigger = getWebsiteDetectionTrigger();
+  return trigger?.targets ?? [];
+}
+
+function setWebsiteTargets(targets) {
+  setTriggerById('website-detection', { targets });
+}
+
+function getWebsiteServerPort() {
+  return store.get('websiteServerPort');
+}
+
+function setWebsiteServerPort(port) {
+  store.set('websiteServerPort', port);
+}
+
 function getAllSettings() {
   return {
     buttonPosition: getButtonPosition(),
@@ -140,6 +173,7 @@ function getAllSettings() {
     cancelWindowSeconds: getCancelWindowSeconds(),
     buttonOpacity: getButtonOpacity(),
     buttonColor: getButtonColor(),
+    websiteServerPort: getWebsiteServerPort(),
     triggers: getTriggerConfig(),
   };
 }
@@ -166,6 +200,9 @@ function updateSettings(partial) {
   }
   if (partial.buttonColor !== undefined) {
     setButtonColor(partial.buttonColor);
+  }
+  if (partial.websiteServerPort !== undefined) {
+    setWebsiteServerPort(partial.websiteServerPort);
   }
   if (partial.triggers !== undefined && Array.isArray(partial.triggers)) {
     const current = getTriggerConfig();
@@ -201,6 +238,18 @@ function migrateTriggersSchema() {
   const current = store.get('triggers');
 
   if (Array.isArray(current)) {
+    if (!current.some((t) => t.id === 'website-detection')) {
+      store.set('triggers', [
+        ...current,
+        {
+          id: 'website-detection',
+          name: 'Website-detection',
+          enabled: false,
+          delaySec: 10,
+          targets: [],
+        },
+      ]);
+    }
     return;
   }
 
@@ -261,6 +310,12 @@ module.exports = {
   setAppDetectionTrigger,
   getFlaggedApps,
   setFlaggedApps,
+  getWebsiteDetectionTrigger,
+  setWebsiteDetectionTrigger,
+  getWebsiteTargets,
+  setWebsiteTargets,
+  getWebsiteServerPort,
+  setWebsiteServerPort,
   migrateTriggersSchema,
   getAllSettings,
   updateSettings,

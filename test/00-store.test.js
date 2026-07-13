@@ -1,5 +1,7 @@
 import { test, expect, mock, beforeEach } from 'bun:test';
 
+mock.restore();
+
 let lastInstance = null;
 
 class StoreStub {
@@ -52,12 +54,13 @@ test('getStorePath returns a non-empty string path', () => {
   expect(p.endsWith('config.json')).toBe(true);
 });
 
-test('defaultTriggersArray returns both triggers with required fields', () => {
+test('defaultTriggersArray returns all triggers with required fields', () => {
   const arr = store.defaultTriggersArray();
   expect(Array.isArray(arr)).toBe(true);
-  expect(arr.length).toBe(2);
+  expect(arr.length).toBe(3);
   const idle = arr.find((t) => t.id === 'idle');
   const appDetection = arr.find((t) => t.id === 'app-detection');
+  const websiteDetection = arr.find((t) => t.id === 'website-detection');
   expect(idle).toBeDefined();
   expect(idle.name).toBe('Idle-timer');
   expect(typeof idle.enabled).toBe('boolean');
@@ -67,6 +70,11 @@ test('defaultTriggersArray returns both triggers with required fields', () => {
   expect(typeof appDetection.enabled).toBe('boolean');
   expect(typeof appDetection.delaySec).toBe('number');
   expect(Array.isArray(appDetection.flaggedApps)).toBe(true);
+  expect(websiteDetection).toBeDefined();
+  expect(websiteDetection.name).toBe('Website-detection');
+  expect(typeof websiteDetection.enabled).toBe('boolean');
+  expect(typeof websiteDetection.delaySec).toBe('number');
+  expect(Array.isArray(websiteDetection.targets)).toBe(true);
 });
 
 test('getTriggerConfig returns the default array shape', () => {
@@ -74,6 +82,7 @@ test('getTriggerConfig returns the default array shape', () => {
   expect(Array.isArray(triggers)).toBe(true);
   expect(triggers[0].id).toBe('idle');
   expect(triggers[1].id).toBe('app-detection');
+  expect(triggers[2].id).toBe('website-detection');
 });
 
 test('setTriggerConfig ignores non-array input (guard)', () => {
@@ -138,7 +147,7 @@ test('updateSettings merges triggers: updates existing by id, appends new', () =
     ],
   });
   const result = store.getTriggerConfig();
-  expect(result.length).toBe(3);
+  expect(result.length).toBe(4);
   const idle = result.find((t) => t.id === 'idle');
   expect(idle.enabled).toBe(true);
   expect(idle.thresholdSec).toBe(99);
@@ -159,10 +168,61 @@ test('updateSettings ignores non-object partial without throwing', () => {
   expect(store.getTriggerConfig()).toEqual(before);
 });
 
-test('migrateTriggersSchema is a no-op when triggers is already an array', () => {
+test('migrateTriggersSchema is a no-op when triggers already includes website-detection', () => {
   const before = store.getTriggerConfig();
   store.migrateTriggersSchema();
   expect(store.getTriggerConfig()).toEqual(before);
+});
+
+test('migrateTriggersSchema appends website-detection when missing from array', () => {
+  store.setTriggerConfig([
+    {
+      id: 'idle',
+      name: 'Idle-timer',
+      enabled: false,
+      thresholdSec: 300,
+    },
+    {
+      id: 'app-detection',
+      name: 'App-detection',
+      enabled: false,
+      delaySec: 10,
+      flaggedApps: [],
+    },
+  ]);
+  store.migrateTriggersSchema();
+  const triggers = store.getTriggerConfig();
+  expect(triggers.length).toBe(3);
+  const website = triggers.find((t) => t.id === 'website-detection');
+  expect(website).toBeDefined();
+  expect(website.targets).toEqual([]);
+  store.migrateTriggersSchema();
+  expect(store.getTriggerConfig().length).toBe(3);
+});
+
+test('getWebsiteTargets returns [] when website-detection is missing', () => {
+  store.setTriggerConfig([
+    { id: 'idle', name: 'Idle-timer', enabled: false, thresholdSec: 300 },
+    {
+      id: 'app-detection',
+      name: 'App-detection',
+      enabled: false,
+      delaySec: 10,
+      flaggedApps: [],
+    },
+  ]);
+  expect(store.getWebsiteTargets()).toEqual([]);
+});
+
+test('setWebsiteTargets persists targets on website-detection trigger', () => {
+  store.setWebsiteTargets(['*.youtube.com', 'instagram.com']);
+  expect(store.getWebsiteTargets()).toEqual(['*.youtube.com', 'instagram.com']);
+});
+
+test('getAllSettings includes websiteServerPort', () => {
+  const all = store.getAllSettings();
+  expect(all).toHaveProperty('websiteServerPort');
+  expect(typeof all.websiteServerPort).toBe('number');
 });
 
 test('migrateTriggersSchema converts legacy object shape to array', () => {
@@ -208,9 +268,10 @@ test('migrateTriggersSchema resets to defaults for object without idle/appDetect
   store.migrateTriggersSchema();
   const triggers = store.getTriggerConfig();
   expect(Array.isArray(triggers)).toBe(true);
-  expect(triggers.length).toBe(2);
+  expect(triggers.length).toBe(3);
   expect(triggers[0].id).toBe('idle');
   expect(triggers[1].id).toBe('app-detection');
+  expect(triggers[2].id).toBe('website-detection');
 });
 
 test('migrateTriggersSchema resets to defaults for non-object shape', () => {
@@ -218,13 +279,13 @@ test('migrateTriggersSchema resets to defaults for non-object shape', () => {
   store.migrateTriggersSchema();
   let triggers = store.getTriggerConfig();
   expect(Array.isArray(triggers)).toBe(true);
-  expect(triggers.length).toBe(2);
+  expect(triggers.length).toBe(3);
 
   setRawTriggers(null);
   store.migrateTriggersSchema();
   triggers = store.getTriggerConfig();
   expect(Array.isArray(triggers)).toBe(true);
-  expect(triggers.length).toBe(2);
+  expect(triggers.length).toBe(3);
 });
 
 test('getAllSettings returns object with all expected keys', () => {

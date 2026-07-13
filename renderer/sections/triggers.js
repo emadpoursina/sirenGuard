@@ -63,6 +63,39 @@ function initTriggersSection() {
       </div>
     </div>
 
+    <div class="trigger-row" id="website-trigger-row">
+      <div class="trigger-head">
+        <label class="switch">
+          <input id="website-enabled" type="checkbox" />
+          <span class="switch-track"></span>
+        </label>
+        <div class="trigger-meta">
+          <span class="trigger-name">Website-detection trigger</span>
+          <span class="muted">Lock when a flagged website stays active in the browser</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="website-delay">Delay (seconds)</label>
+        <input id="website-delay" type="number" min="1" step="1" value="10" />
+      </div>
+      <div class="flagged">
+        <div class="flagged-head">
+          <span class="field-label">Flagged websites</span>
+          <span id="website-targets-count" class="muted">0</span>
+        </div>
+        <ul id="website-targets-list" class="flagged-list"></ul>
+        <div class="add-row">
+          <input id="website-domain-input" type="text" placeholder="e.g. *.youtube.com" />
+          <button id="website-add-domain" type="button">Add</button>
+        </div>
+        <p class="muted extension-hint">
+          Install the Siren Guard browser extension via
+          <code>chrome://extensions</code> (Developer mode → Load unpacked →
+          <code>siren-guard-extension/</code>).
+        </p>
+      </div>
+    </div>
+
     <button id="add-trigger" type="button" class="disabled-action" disabled>Add trigger — coming soon</button>
   `;
 
@@ -77,8 +110,15 @@ function initTriggersSection() {
   const manualName = document.getElementById('manual-name');
   const manualBundle = document.getElementById('manual-bundle');
   const addManualBtn = document.getElementById('add-manual');
+  const websiteEnabled = document.getElementById('website-enabled');
+  const websiteDelay = document.getElementById('website-delay');
+  const websiteTargetsList = document.getElementById('website-targets-list');
+  const websiteTargetsCount = document.getElementById('website-targets-count');
+  const websiteDomainInput = document.getElementById('website-domain-input');
+  const websiteAddDomainBtn = document.getElementById('website-add-domain');
 
   let flaggedApps = [];
+  let websiteTargets = [];
   let runningApps = [];
   let syncing = false;
 
@@ -124,6 +164,44 @@ function initTriggersSection() {
     flaggedCount.textContent = String(flaggedApps.length);
   }
 
+  function renderWebsiteTargets() {
+    websiteTargetsList.innerHTML = '';
+    websiteTargets.forEach((target, index) => {
+      const li = document.createElement('li');
+
+      const label = document.createElement('div');
+      label.className = 'app-label';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'app-name';
+      nameSpan.textContent = target;
+
+      label.appendChild(nameSpan);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', async () => {
+        websiteTargets.splice(index, 1);
+        renderWebsiteTargets();
+        await persistTriggers();
+      });
+
+      li.appendChild(label);
+      li.appendChild(removeBtn);
+      websiteTargetsList.appendChild(li);
+    });
+    websiteTargetsCount.textContent = String(websiteTargets.length);
+  }
+
+  function isValidWebsiteTarget(value) {
+    if (!value || /\s/.test(value)) {
+      return false;
+    }
+    const pattern = value.startsWith('*.') ? value.slice(2) : value;
+    return pattern.length > 0 && /^[a-z0-9.*-]+$/i.test(value);
+  }
+
   async function persistTriggers() {
     const settings = window.dashboard.getSettings();
     const triggers = Array.isArray(settings?.triggers) ? [...settings.triggers] : [];
@@ -146,6 +224,14 @@ function initTriggersSection() {
           })),
         };
       }
+      if (entry.id === 'website-detection') {
+        return {
+          ...entry,
+          enabled: websiteEnabled.checked,
+          delaySec: Number(websiteDelay.value) || 10,
+          targets: [...websiteTargets],
+        };
+      }
       return entry;
     });
     await window.dashboard.updateSettings({ triggers: next });
@@ -155,6 +241,7 @@ function initTriggersSection() {
     syncing = true;
     const idle = getTriggerEntry(settings.triggers, 'idle');
     const appDetection = getTriggerEntry(settings.triggers, 'app-detection');
+    const websiteDetection = getTriggerEntry(settings.triggers, 'website-detection');
 
     idleEnabled.checked = Boolean(idle.enabled);
     idleThreshold.value = idle.thresholdSec != null ? idle.thresholdSec : 300;
@@ -167,6 +254,13 @@ function initTriggersSection() {
         }))
       : [];
     renderFlagged();
+    websiteEnabled.checked = Boolean(websiteDetection.enabled);
+    websiteDelay.value =
+      websiteDetection.delaySec != null ? websiteDetection.delaySec : 10;
+    websiteTargets = Array.isArray(websiteDetection.targets)
+      ? websiteDetection.targets.map((t) => String(t))
+      : [];
+    renderWebsiteTargets();
     syncing = false;
   }
 
@@ -209,6 +303,12 @@ function initTriggersSection() {
   appDelay.addEventListener('change', () => {
     if (!syncing) persistTriggers();
   });
+  websiteEnabled.addEventListener('change', () => {
+    if (!syncing) persistTriggers();
+  });
+  websiteDelay.addEventListener('change', () => {
+    if (!syncing) persistTriggers();
+  });
 
   addFromRunningBtn.addEventListener('click', async () => {
     const selected = runningAppsSelect.value;
@@ -228,6 +328,21 @@ function initTriggersSection() {
     addFlaggedApp({ name: name || null, bundleId: bundleId || null });
     manualName.value = '';
     manualBundle.value = '';
+    await persistTriggers();
+  });
+
+  websiteAddDomainBtn.addEventListener('click', async () => {
+    const raw = websiteDomainInput.value.trim().toLowerCase();
+    if (!isValidWebsiteTarget(raw)) {
+      return;
+    }
+    const exists = websiteTargets.some((t) => t.toLowerCase() === raw);
+    if (exists) {
+      return;
+    }
+    websiteTargets.push(raw);
+    websiteDomainInput.value = '';
+    renderWebsiteTargets();
     await persistTriggers();
   });
 

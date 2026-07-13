@@ -24,6 +24,8 @@ const {
 const lockOrchestration = require('./lock-orchestration');
 const idleTrigger = require('./idle-trigger');
 const appDetectionTrigger = require('./app-detection-trigger');
+const websiteDetectionTrigger = require('./website-detection-trigger');
+const websiteServer = require('./website-server');
 
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
@@ -326,6 +328,8 @@ app.whenReady().then(() => {
   migrateTriggersSchema();
   idleTrigger.start();
   appDetectionTrigger.start();
+  websiteDetectionTrigger.start();
+  websiteServer.start();
 
   if (app.isPackaged && getLaunchAtLogin()) {
     applyLaunchAtLogin(true);
@@ -345,4 +349,6 @@ app.on('window-all-closed', (event) => {
 app.on('will-quit', () => {
   idleTrigger.stop();
   appDetectionTrigger.stop();
+  websiteDetectionTrigger.stop();
+  websiteServer.stop();
 });

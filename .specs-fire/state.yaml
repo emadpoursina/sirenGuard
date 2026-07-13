@@ -14,6 +14,56 @@ workspace:
       timestamp: 2026-07-03T08:08:00-07:00
   scanned_at: 2026-07-03T07:19:00-07:00
 intents:
+  - id: website-trigger
+    title: Website Trigger
+    status: in_progress
+    work_items:
+      - id: website-trigger-store
+        title: Website trigger store schema
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-sirenguard-006
+        completed_at: 2026-07-12T13:06:13.295Z
+      - id: website-detection-trigger
+        title: Website-detection trigger module
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - website-trigger-store
+        run_id: run-sirenguard-006
+        completed_at: 2026-07-12T13:06:13.295Z
+      - id: website-local-server
+        title: Local website-match server
+        status: completed
+        complexity: high
+        mode: validate
+        checkpoint_1: approved
+        design_doc: .specs-fire/intents/website-trigger/work-items/website-local-server-design.md
+        depends_on:
+          - website-detection-trigger
+        run_id: run-sirenguard-006
+        completed_at: 2026-07-12T13:06:13.295Z
+      - id: dashboard-websites-section
+        title: Dashboard Websites trigger block
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - website-trigger-store
+        run_id: run-sirenguard-006
+        completed_at: 2026-07-12T13:06:13.295Z
+      - id: browser-extension
+        title: Browser extension (MV3)
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - website-local-server
+        run_id: run-sirenguard-006
+        completed_at: 2026-07-12T13:06:13.295Z
   - id: dashboard-settings-window
     title: Dashboard / Settings window
     status: in_progress
@@ -216,3 +266,23 @@ runs:
           mode: autopilot
       started: 2026-07-12T07:47:58.609Z
       completed: 2026-07-12T07:49:18.028Z
+    - id: run-sirenguard-006
+      scope: wide
+      work_items:
+        - id: website-trigger-store
+          intent: website-trigger
+          mode: autopilot
+        - id: website-detection-trigger
+          intent: website-trigger
+          mode: confirm
+        - id: dashboard-websites-section
+          intent: website-trigger
+          mode: confirm
+        - id: website-local-server
+          intent: website-trigger
+          mode: validate
+        - id: browser-extension
+          intent: website-trigger
+          mode: confirm
+      started: 2026-07-12T13:03:43.731Z
+      completed: 2026-07-12T13:06:13.295Z
