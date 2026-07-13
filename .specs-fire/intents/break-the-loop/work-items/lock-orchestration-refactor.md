@@ -4,7 +4,7 @@ title: Lock orchestration staged pipeline + escalation
 intent: break-the-loop
 complexity: high
 mode: validate
-status: pending
+status: completed
 depends_on:
   - break-the-loop-store
   - reminder-overlay
@@ -12,6 +12,8 @@ depends_on:
   - website-consequence-action
   - idle-consequence-action
 created: 2026-07-13T10:51:00-07:00
+run_id: run-sirenguard-009
+completed_at: 2026-07-13T18:13:28.278Z
 ---
 
 # Work Item: Lock orchestration staged pipeline + escalation

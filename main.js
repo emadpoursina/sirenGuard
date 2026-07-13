@@ -33,6 +33,7 @@ const appDetectionTrigger = require('./app-detection-trigger');
 const websiteDetectionTrigger = require('./website-detection-trigger');
 const websiteServer = require('./website-server');
 const frictionGate = require('./friction-gate');
+const reminderOverlay = require('./reminder-overlay');
 
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
@@ -257,7 +258,7 @@ function broadcastSettingsChanged() {
 
 function registerIpcHandlers() {
   ipcMain.handle('arm', () => {
-    lockOrchestration.arm();
+    lockOrchestration.arm({ triggerKind: 'manual' });
   });
 
   ipcMain.handle('cancel', () => {
@@ -453,4 +454,5 @@ app.on('will-quit', () => {
   appDetectionTrigger.stop();
   websiteDetectionTrigger.stop();
   websiteServer.stop();
+  reminderOverlay.destroyReminderWindow();
 });

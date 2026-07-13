@@ -76,7 +76,11 @@ async function tick() {
   if (isAppBlocked(frontmost)) {
     flaggedSinceMs = null;
     if (!weArmed && !lockOrchestration.isArmed()) {
-      lockOrchestration.arm({ suppressCancel: true });
+      lockOrchestration.arm({
+        suppressCancel: true,
+        triggerKind: 'app',
+        context: { app: frontmost },
+      });
       weArmed = true;
     }
     return;
@@ -92,7 +96,10 @@ async function tick() {
       !weArmed &&
       !lockOrchestration.isArmed()
     ) {
-      lockOrchestration.arm();
+      lockOrchestration.arm({
+        triggerKind: 'app',
+        context: { app: frontmost },
+      });
       weArmed = true;
     }
   } else {

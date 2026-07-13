@@ -50,7 +50,7 @@ async function tick() {
 
   if (idleSec >= thresholdSec) {
     if (!weArmed && !lockOrchestration.isArmed()) {
-      lockOrchestration.arm();
+      lockOrchestration.arm({ triggerKind: 'idle' });
       weArmed = true;
     }
   } else if (weArmed) {

@@ -8,28 +8,38 @@ let websiteTriggerConfig = {
   targets: ['example.com'],
 };
 
-mock.module('../lock-orchestration.js', () => ({
-  arm: (opts) => {
-    lockCalls.arm += 1;
-    lockCalls.suppress = Boolean(opts?.suppressCancel);
-    lockCalls.armed = true;
-  },
-  cancel: () => {
-    lockCalls.cancel += 1;
-    lockCalls.armed = false;
-  },
-  isArmed: () => lockCalls.armed,
-}));
+let trigger;
 
-mock.module('../store.js', () => ({
-  getWebsiteDetectionTrigger: () => websiteTriggerConfig,
-  isTriggersSuspended: () => false,
-  RE_ENTRY_BLOCK_SEC: 300,
-}));
+function applyMocks() {
+  mock.module('../lock-orchestration.js', () => ({
+    arm: (opts) => {
+      lockCalls.arm += 1;
+      lockCalls.suppress = Boolean(opts?.suppressCancel);
+      lockCalls.armed = true;
+    },
+    cancel: () => {
+      lockCalls.cancel += 1;
+      lockCalls.armed = false;
+    },
+    isArmed: () => lockCalls.armed,
+  }));
 
-const trigger = await import('../website-detection-trigger.js');
+  mock.module('../store.js', () => ({
+    getWebsiteDetectionTrigger: () => websiteTriggerConfig,
+    isTriggersSuspended: () => false,
+    RE_ENTRY_BLOCK_SEC: 300,
+  }));
+}
 
-beforeEach(() => {
+async function loadTrigger() {
+  const triggerPath = require.resolve('../website-detection-trigger.js');
+  delete require.cache[triggerPath];
+  return import('../website-detection-trigger.js');
+}
+
+beforeEach(async () => {
+  mock.restore();
+  applyMocks();
   lockCalls.arm = 0;
   lockCalls.cancel = 0;
   lockCalls.armed = false;
@@ -38,11 +48,11 @@ beforeEach(() => {
     delaySec: 0.05,
     targets: ['example.com'],
   };
-  trigger.stop();
+  trigger = await loadTrigger();
 });
 
 afterEach(() => {
-  trigger.stop();
+  trigger?.stop();
   mock.restore();
 });
 
@@ -62,6 +72,7 @@ test('onSiteLeave cancels when this trigger armed', async () => {
 
 test('disabled trigger does not arm on match', async () => {
   websiteTriggerConfig.enabled = false;
+  trigger = await loadTrigger();
   trigger.onSiteMatch('example.com', 'https://example.com');
   await new Promise((resolve) => setTimeout(resolve, 80));
   expect(lockCalls.arm).toBe(0);

@@ -165,11 +165,13 @@ intents:
         completed_at: 2026-07-13T17:56:00.993Z
       - id: reminder-overlay
         title: Reminder overlay window + renderer
-        status: pending
+        status: completed
         complexity: high
         mode: validate
         depends_on:
           - break-the-loop-store
+        run_id: run-sirenguard-009
+        completed_at: 2026-07-13T18:13:28.278Z
       - id: app-consequence-action
         title: App force-quit + re-entry block action
         status: completed
@@ -199,7 +201,7 @@ intents:
         completed_at: 2026-07-13T17:56:00.993Z
       - id: lock-orchestration-refactor
         title: Lock orchestration staged pipeline + escalation
-        status: pending
+        status: completed
         complexity: high
         mode: validate
         depends_on:
@@ -208,6 +210,8 @@ intents:
           - app-consequence-action
           - website-consequence-action
           - idle-consequence-action
+        run_id: run-sirenguard-009
+        completed_at: 2026-07-13T18:13:28.278Z
       - id: disable-quit-friction
         title: Disable / quit / override friction gate
         status: completed
@@ -401,3 +405,14 @@ runs:
           mode: confirm
       started: 2026-07-13T17:58:08.679Z
       completed: 2026-07-13T18:01:51.666Z
+    - id: run-sirenguard-009
+      scope: batch
+      work_items:
+        - id: reminder-overlay
+          intent: break-the-loop
+          mode: validate
+        - id: lock-orchestration-refactor
+          intent: break-the-loop
+          mode: validate
+      started: 2026-07-13T18:07:33.304Z
+      completed: 2026-07-13T18:13:28.278Z

@@ -2,8 +2,9 @@
 id: break-the-loop
 title: Break the loop — meaningful reminder + stricter actions + escalation +
   disable friction
-status: in_progress
+status: completed
 created: 2026-07-13T10:48:00-07:00
+completed_at: 2026-07-13T18:13:28.284Z
 ---
 
 # Intent: Break the loop — meaningful reminder + stricter actions + escalation + disable friction

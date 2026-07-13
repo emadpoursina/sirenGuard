@@ -21,6 +21,7 @@ function isSiteBlocked(hostname, now = Date.now()) {
 
 let weArmed = false;
 let matchedSinceMs = null;
+let matchedHostname = null;
 let armDelayTimer = null;
 
 function clearArmDelayTimer() {
@@ -39,6 +40,7 @@ function cancelArmedState() {
 
 function resetMatchState() {
   matchedSinceMs = null;
+  matchedHostname = null;
   clearArmDelayTimer();
 }
 
@@ -51,7 +53,10 @@ function scheduleArm(delaySec) {
       !weArmed &&
       !lockOrchestration.isArmed()
     ) {
-      lockOrchestration.arm();
+      lockOrchestration.arm({
+        triggerKind: 'website',
+        context: { hostname: matchedHostname },
+      });
       weArmed = true;
     }
   }, delaySec * 1000);
@@ -68,7 +73,11 @@ function onSiteMatch(hostname, _url) {
   if (isSiteBlocked(hostname)) {
     resetMatchState();
     if (!weArmed && !lockOrchestration.isArmed()) {
-      lockOrchestration.arm({ suppressCancel: true });
+      lockOrchestration.arm({
+        suppressCancel: true,
+        triggerKind: 'website',
+        context: { hostname },
+      });
       weArmed = true;
     }
     return;
@@ -80,6 +89,7 @@ function onSiteMatch(hostname, _url) {
   }
 
   if (matchedSinceMs === null) {
+    matchedHostname = hostname;
     matchedSinceMs = Date.now();
     scheduleArm(delaySec);
   }
