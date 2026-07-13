@@ -1,12 +1,35 @@
 import { test, expect } from 'bun:test';
 
-test('reminder renderer enforces min watch before continue', () => {
-  let remaining = 3;
-  let minWatchMet = false;
-  let videoEnded = true;
-  const canContinue = () => minWatchMet && videoEnded;
-  expect(canContinue()).toBe(false);
-  remaining = 0;
-  minWatchMet = remaining <= 0;
-  expect(canContinue()).toBe(true);
+function canContinue({ mediaKind, minWatchMet, videoEnded }) {
+  return mediaKind === 'video' ? minWatchMet || videoEnded : minWatchMet;
+}
+
+test('video allows continue after min watch or when clip ends', () => {
+  expect(
+    canContinue({ mediaKind: 'video', minWatchMet: false, videoEnded: false }),
+  ).toBe(false);
+  expect(
+    canContinue({ mediaKind: 'video', minWatchMet: true, videoEnded: false }),
+  ).toBe(true);
+  expect(
+    canContinue({ mediaKind: 'video', minWatchMet: false, videoEnded: true }),
+  ).toBe(true);
+});
+
+test('image requires min watch before continue', () => {
+  expect(
+    canContinue({ mediaKind: 'image', minWatchMet: false, videoEnded: true }),
+  ).toBe(false);
+  expect(
+    canContinue({ mediaKind: 'image', minWatchMet: true, videoEnded: true }),
+  ).toBe(true);
+});
+
+test('fallback media still requires min watch', () => {
+  expect(
+    canContinue({ mediaKind: 'none', minWatchMet: false, videoEnded: false }),
+  ).toBe(false);
+  expect(
+    canContinue({ mediaKind: 'none', minWatchMet: true, videoEnded: false }),
+  ).toBe(true);
 });

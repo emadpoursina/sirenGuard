@@ -6,7 +6,7 @@ const continueBtn = document.getElementById('continue-btn');
 
 let countdownTimer = null;
 let remainingSec = 0;
-let mediaReady = false;
+let mediaKind = 'none';
 let minWatchMet = false;
 let videoEnded = false;
 let completed = false;
@@ -20,8 +20,9 @@ function clearCountdown() {
 
 function updateContinueState() {
   const canContinue =
-    minWatchMet && (videoEnded || !document.querySelector('video'));
+    mediaKind === 'video' ? minWatchMet || videoEnded : minWatchMet;
   continueBtn.disabled = !canContinue;
+  continueBtn.hidden = !canContinue;
   if (canContinue) {
     countdownEl.textContent = 'You can continue';
   }
@@ -56,22 +57,25 @@ function renderMedia(payload) {
   mediaWrap.innerHTML = '';
   mediaWrap.hidden = true;
   fallbackEl.hidden = true;
-  mediaReady = false;
+  mediaKind = 'none';
   videoEnded = false;
 
   if (!payload.mediaUrl) {
     fallbackEl.hidden = false;
-    mediaReady = true;
     return;
   }
 
   if (payload.mediaType === 'video') {
+    mediaKind = 'video';
     const video = document.createElement('video');
     video.src = payload.mediaUrl;
     video.autoplay = true;
     video.playsInline = true;
     video.addEventListener('loadeddata', () => {
-      mediaReady = true;
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.catch(() => {});
+      }
     });
     video.addEventListener('ended', () => {
       videoEnded = true;
@@ -79,24 +83,17 @@ function renderMedia(payload) {
     });
     video.addEventListener('error', () => {
       fallbackEl.hidden = false;
-      mediaReady = true;
       videoEnded = true;
       updateContinueState();
     });
     mediaWrap.appendChild(video);
   } else {
+    mediaKind = 'image';
     const img = document.createElement('img');
     img.src = payload.mediaUrl;
     img.alt = 'Reminder';
-    img.addEventListener('load', () => {
-      mediaReady = true;
-      videoEnded = true;
-      updateContinueState();
-    });
     img.addEventListener('error', () => {
       fallbackEl.hidden = false;
-      mediaReady = true;
-      videoEnded = true;
       updateContinueState();
     });
     mediaWrap.appendChild(img);
@@ -115,6 +112,7 @@ window.reminderOverlay.onShow((payload) => {
   completed = false;
   minWatchMet = false;
   continueBtn.disabled = true;
+  continueBtn.hidden = true;
   captionEl.textContent = payload.caption || '';
   renderMedia(payload);
   startCountdown(Number(payload.minWatchSec) || 10);
