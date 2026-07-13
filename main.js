@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { exec } = require('child_process');
 const {
   app,
@@ -20,12 +21,18 @@ const {
   resetSettings,
   getStartMinimized,
   getStorePath,
+  getReminderMediaDir,
+  ensureReminderMediaDir,
+  setReminder,
+  setTriggerById,
+  getTriggerById,
 } = require('./store');
 const lockOrchestration = require('./lock-orchestration');
 const idleTrigger = require('./idle-trigger');
 const appDetectionTrigger = require('./app-detection-trigger');
 const websiteDetectionTrigger = require('./website-detection-trigger');
 const websiteServer = require('./website-server');
+const frictionGate = require('./friction-gate');
 
 const WINDOW_WIDTH = 64;
 const WINDOW_HEIGHT = 64;
@@ -42,6 +49,7 @@ const DEFAULT_BUTTON_POSITION = { x: 100, y: 100 };
 let tray = null;
 let floatingWindow = null;
 let settingsWindow = null;
+let jsDragActive = false;
 
 function createFloatingWindow() {
   const position = getButtonPosition();
@@ -70,6 +78,10 @@ function createFloatingWindow() {
   lockOrchestration.attach(floatingWindow.webContents);
 
   floatingWindow.on('moved', () => {
+    if (jsDragActive) {
+      jsDragActive = false;
+      return;
+    }
     if (!floatingWindow) return;
     const [x, y] = floatingWindow.getPosition();
     setButtonPosition({ x, y });
@@ -207,9 +219,16 @@ function buildTrayMenu() {
     },
     { type: 'separator' },
     {
+      label: 'Override for 1 hour',
+      click: () => {
+        frictionGate.requestFriction('override-1h');
+      },
+    },
+    { type: 'separator' },
+    {
       label: 'Quit',
       click: () => {
-        app.quit();
+        frictionGate.requestFriction('quit');
       },
     },
   ]);
@@ -247,6 +266,22 @@ function registerIpcHandlers() {
 
   ipcMain.handle('save-position', (_event, position) => {
     setButtonPosition(position);
+  });
+
+  ipcMain.handle('set-position', (_event, position) => {
+    if (!position || typeof position !== 'object') {
+      return;
+    }
+    const x = Math.round(Number(position.x));
+    const y = Math.round(Number(position.y));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+    jsDragActive = true;
+    if (floatingWindow && !floatingWindow.isDestroyed()) {
+      floatingWindow.setPosition(x, y);
+    }
+    setButtonPosition({ x, y });
   });
 
   ipcMain.handle('get-position', () => {
@@ -319,9 +354,76 @@ function registerIpcHandlers() {
   ipcMain.handle('settings:reveal-config', () => {
     shell.showItemInFolder(getStorePath());
   });
+
+  ipcMain.handle('friction:request', async (_event, payload) => {
+    const kind = payload?.kind;
+    const data = payload?.payload || {};
+    if (!kind) {
+      return false;
+    }
+    return frictionGate.requestFriction(kind, data);
+  });
+
+  ipcMain.handle('reminder:upload', async (_event, payload) => {
+    const mimeType = payload?.mimeType;
+    const data = payload?.data;
+    const durationSec = Number(payload?.durationSec);
+
+    if (!mimeType || !data) {
+      return { ok: false, error: 'invalid payload' };
+    }
+    if (mimeType.startsWith('video/') && durationSec > 30) {
+      return { ok: false, error: 'video too long' };
+    }
+
+    const allowed = new Set(['image/png', 'image/jpeg', 'video/mp4']);
+    if (!allowed.has(mimeType)) {
+      return { ok: false, error: 'unsupported type' };
+    }
+
+    const buffer = Buffer.from(data);
+    if (buffer.length > 50 * 1024 * 1024) {
+      return { ok: false, error: 'file too large' };
+    }
+
+    const ext =
+      mimeType === 'image/png'
+        ? 'png'
+        : mimeType === 'image/jpeg'
+          ? 'jpg'
+          : 'mp4';
+    const dir = ensureReminderMediaDir();
+    const filename = `reminder-${Date.now()}.${ext}`;
+    const fullPath = path.join(dir, filename);
+    fs.writeFileSync(fullPath, buffer);
+
+    const mediaType = mimeType.startsWith('video/') ? 'video' : 'image';
+    setReminder({ mediaType, mediaPath: filename });
+    broadcastSettingsChanged();
+    return { ok: true, mediaType, mediaPath: filename };
+  });
+
+  ipcMain.handle('reminder:get-preview', (_event, filename) => {
+    if (!filename || typeof filename !== 'string') {
+      return null;
+    }
+    const safeName = path.basename(filename);
+    const fullPath = path.join(getReminderMediaDir(), safeName);
+    if (!fs.existsSync(fullPath)) {
+      return null;
+    }
+    return `file://${fullPath}`;
+  });
 }
 
 app.whenReady().then(() => {
+  frictionGate.registerFrictionIpc(async (action) => {
+    await frictionGate.executeFrictionAction(action, {
+      setTriggerById,
+      getTriggerById,
+      broadcastSettingsChanged,
+    });
+  });
   registerIpcHandlers();
   createFloatingWindow();
   createTray();

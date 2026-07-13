@@ -61,6 +61,7 @@ const store = new Store({
     safeApp: defaultSafeApp(),
     confirmationPhrase: '',
     overrideLog: [],
+    overrideUntil: null,
   },
 });
 
@@ -235,6 +236,32 @@ function getOverrideLog() {
   return Array.isArray(log) ? log : [];
 }
 
+function getOverrideUntil() {
+  const value = store.get('overrideUntil');
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function setOverrideUntil(timestamp) {
+  if (timestamp == null) {
+    store.set('overrideUntil', null);
+    return;
+  }
+  const next = Number(timestamp);
+  store.set('overrideUntil', Number.isFinite(next) ? next : null);
+}
+
+function isTriggersSuspended(now = Date.now()) {
+  const until = getOverrideUntil();
+  if (!until) {
+    return false;
+  }
+  if (now >= until) {
+    setOverrideUntil(null);
+    return false;
+  }
+  return true;
+}
+
 function appendOverrideLog(entry) {
   if (!entry || typeof entry !== 'object' || !entry.kind) {
     return;
@@ -275,6 +302,7 @@ function getAllSettings() {
     safeApp: getSafeApp(),
     confirmationPhrase: getConfirmationPhrase(),
     overrideLog: getOverrideLog(),
+    overrideUntil: getOverrideUntil(),
   };
 }
 
@@ -335,6 +363,9 @@ function updateSettings(partial) {
   }
   if (partial.overrideLog !== undefined && Array.isArray(partial.overrideLog)) {
     store.set('overrideLog', partial.overrideLog);
+  }
+  if (partial.overrideUntil !== undefined) {
+    setOverrideUntil(partial.overrideUntil);
   }
 }
 
@@ -441,6 +472,9 @@ module.exports = {
   setConfirmationPhrase,
   getOverrideLog,
   appendOverrideLog,
+  getOverrideUntil,
+  setOverrideUntil,
+  isTriggersSuspended,
   getReminderMediaDir,
   ensureReminderMediaDir,
   migrateTriggersSchema,

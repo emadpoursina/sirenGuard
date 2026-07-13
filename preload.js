@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('sirenGuard', {
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   savePosition: (position) => ipcRenderer.invoke('save-position', position),
+  setPosition: (position) => ipcRenderer.invoke('set-position', position),
   getPosition: () => ipcRenderer.invoke('get-position'),
 });

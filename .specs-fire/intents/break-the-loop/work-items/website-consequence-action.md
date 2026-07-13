@@ -4,10 +4,12 @@ title: Website tab-close + re-entry block action
 intent: break-the-loop
 complexity: medium
 mode: confirm
-status: pending
+status: completed
 depends_on:
   - break-the-loop-store
 created: 2026-07-13T10:51:00-07:00
+run_id: run-sirenguard-008
+completed_at: 2026-07-13T18:01:51.153Z
 ---
 
 # Work Item: Website tab-close + re-entry block action

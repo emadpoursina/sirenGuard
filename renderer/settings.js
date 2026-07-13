@@ -46,5 +46,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initGeneralSection();
   initButtonSection();
   initTriggersSection();
+  initReminderSection();
   initAboutSection();
 });

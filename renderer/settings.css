@@ -320,6 +320,19 @@ button.primary {
   border-color: #b44628;
 }
 
+.reminder-preview {
+  margin-top: 8px;
+}
+
+.reminder-preview-media {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.error-text {
+  color: #ff8a80;
+}
+
 .muted {
   font-size: 12px;
   color: #8e8e93;

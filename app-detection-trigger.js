@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const lockOrchestration = require('./lock-orchestration');
-const { getAppDetectionTrigger } = require('./store');
+const { getAppDetectionTrigger, isTriggersSuspended } = require('./store');
+const { isAppBlocked } = require('./app-consequence-action');
 
 const POLL_INTERVAL_MS = 5000;
 const NAME_QUERY =
@@ -53,7 +54,7 @@ function isFlagged(frontmost, flaggedApps) {
 
 async function tick() {
   const config = getAppDetectionTrigger();
-  if (!config || !config.enabled) {
+  if (!config || !config.enabled || isTriggersSuspended()) {
     if (weArmed) {
       lockOrchestration.cancel();
       weArmed = false;
@@ -69,6 +70,15 @@ async function tick() {
 
   const frontmost = await getFrontmost();
   if (!frontmost.name && !frontmost.bundleId) {
+    return;
+  }
+
+  if (isAppBlocked(frontmost)) {
+    flaggedSinceMs = null;
+    if (!weArmed && !lockOrchestration.isArmed()) {
+      lockOrchestration.arm({ suppressCancel: true });
+      weArmed = true;
+    }
     return;
   }
 

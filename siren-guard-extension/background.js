@@ -3,6 +3,8 @@ importScripts('hostname-match.js');
 const DEFAULT_BASE_URL = 'http://127.0.0.1:45117';
 const SYNC_INTERVAL_MS = 60_000;
 
+const CLOSE_TAB_POLL_MS = 2000;
+
 let baseUrl = DEFAULT_BASE_URL;
 let targets = [];
 let matchedHostname = null;
@@ -56,6 +58,38 @@ async function sendLeave(hostname, url) {
     url: url || undefined,
     timestamp: Date.now(),
   });
+}
+
+async function pollCloseTab() {
+  try {
+    const res = await fetch(`${baseUrl}/close-tab`);
+    if (!res.ok) {
+      return;
+    }
+    const data = await res.json();
+    if (!data.close || !data.hostname) {
+      return;
+    }
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    if (!tab?.url || tab.url.startsWith('chrome://')) {
+      return;
+    }
+    let hostname;
+    try {
+      hostname = new URL(tab.url).hostname;
+    } catch {
+      return;
+    }
+    if (hostname === data.hostname || isMatched(hostname)) {
+      await chrome.tabs.remove(tab.id);
+      if (matchedHostname === hostname) {
+        matchedHostname = null;
+      }
+    }
+  } catch {
+    // Desktop app may be offline.
+  }
 }
 
 async function evaluateActiveTab() {
@@ -138,3 +172,4 @@ chrome.webNavigation.onCommitted.addListener((details) => {
 
 fetchTargets();
 startSyncTimer();
+setInterval(pollCloseTab, CLOSE_TAB_POLL_MS);

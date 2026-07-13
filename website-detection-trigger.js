@@ -1,5 +1,23 @@
 const lockOrchestration = require('./lock-orchestration');
-const { getWebsiteDetectionTrigger } = require('./store');
+const { getWebsiteDetectionTrigger, isTriggersSuspended, RE_ENTRY_BLOCK_SEC } = require('./store');
+const {
+  createReEntryBlockRegistry,
+  hostnameKey,
+} = require('./re-entry-block');
+
+const blockRegistry = createReEntryBlockRegistry(RE_ENTRY_BLOCK_SEC);
+
+function registerSiteBlock(hostname) {
+  const key = hostnameKey(hostname);
+  if (key) {
+    blockRegistry.add(key);
+  }
+}
+
+function isSiteBlocked(hostname, now = Date.now()) {
+  const key = hostnameKey(hostname);
+  return key ? blockRegistry.isBlocked(key, now) : false;
+}
 
 let weArmed = false;
 let matchedSinceMs = null;
@@ -39,11 +57,20 @@ function scheduleArm(delaySec) {
   }, delaySec * 1000);
 }
 
-function onSiteMatch(_hostname, _url) {
+function onSiteMatch(hostname, _url) {
   const config = getWebsiteDetectionTrigger();
-  if (!config || !config.enabled) {
+  if (!config || !config.enabled || isTriggersSuspended()) {
     resetMatchState();
     cancelArmedState();
+    return;
+  }
+
+  if (isSiteBlocked(hostname)) {
+    resetMatchState();
+    if (!weArmed && !lockOrchestration.isArmed()) {
+      lockOrchestration.arm({ suppressCancel: true });
+      weArmed = true;
+    }
     return;
   }
 
@@ -77,4 +104,6 @@ module.exports = {
   stop,
   onSiteMatch,
   onSiteLeave,
+  registerSiteBlock,
+  isSiteBlocked,
 };

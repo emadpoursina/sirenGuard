@@ -1,6 +1,6 @@
 import { test, expect, mock, beforeEach, afterEach } from 'bun:test';
 
-const lockCalls = { arm: 0, cancel: 0, armed: false };
+const lockCalls = { arm: 0, cancel: 0, armed: false, suppress: false };
 
 let websiteTriggerConfig = {
   enabled: true,
@@ -9,8 +9,9 @@ let websiteTriggerConfig = {
 };
 
 mock.module('../lock-orchestration.js', () => ({
-  arm: () => {
+  arm: (opts) => {
     lockCalls.arm += 1;
+    lockCalls.suppress = Boolean(opts?.suppressCancel);
     lockCalls.armed = true;
   },
   cancel: () => {
@@ -22,6 +23,8 @@ mock.module('../lock-orchestration.js', () => ({
 
 mock.module('../store.js', () => ({
   getWebsiteDetectionTrigger: () => websiteTriggerConfig,
+  isTriggersSuspended: () => false,
+  RE_ENTRY_BLOCK_SEC: 300,
 }));
 
 const trigger = await import('../website-detection-trigger.js');
@@ -62,6 +65,14 @@ test('disabled trigger does not arm on match', async () => {
   trigger.onSiteMatch('example.com', 'https://example.com');
   await new Promise((resolve) => setTimeout(resolve, 80));
   expect(lockCalls.arm).toBe(0);
+});
+
+test('onSiteMatch arms immediately when hostname is blocked', () => {
+  trigger.registerSiteBlock('example.com');
+  lockCalls.arm = 0;
+  trigger.onSiteMatch('example.com', 'https://example.com');
+  expect(lockCalls.arm).toBe(1);
+  expect(lockCalls.suppress).toBe(true);
 });
 
 test('stop clears armed state owned by website trigger', async () => {

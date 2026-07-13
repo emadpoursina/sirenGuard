@@ -1,6 +1,6 @@
 const { exec } = require('child_process');
 const lockOrchestration = require('./lock-orchestration');
-const { getIdleTrigger } = require('./store');
+const { getIdleTrigger, isTriggersSuspended } = require('./store');
 
 const POLL_INTERVAL_MS = 5000;
 const IDLE_QUERY = 'ioreg -c IOHIDSystem -r -d 4';
@@ -30,7 +30,7 @@ function getIdleSeconds() {
 
 async function tick() {
   const config = getIdleTrigger();
-  if (!config || !config.enabled) {
+  if (!config || !config.enabled || isTriggersSuspended()) {
     if (weArmed) {
       lockOrchestration.cancel();
       weArmed = false;

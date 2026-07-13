@@ -10,6 +10,7 @@ const DEFAULT_PORT = 45117;
 const LOOPBACK = '127.0.0.1';
 
 let server = null;
+let pendingCloseHostname = null;
 
 function corsHeaders() {
   return {
@@ -84,6 +85,29 @@ async function handleRequest(req, res) {
 
     if (req.method === 'POST' && url.pathname === '/site-leave') {
       websiteDetectionTrigger.onSiteLeave();
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/close-tab') {
+      const hostname = pendingCloseHostname;
+      pendingCloseHostname = null;
+      sendJson(res, 200, {
+        close: Boolean(hostname),
+        hostname: hostname || null,
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/close-tab') {
+      const body = await readJsonBody(req);
+      const hostname =
+        typeof body.hostname === 'string' ? body.hostname.trim() : '';
+      if (!hostname) {
+        sendJson(res, 400, { ok: false, error: 'hostname required' });
+        return;
+      }
+      pendingCloseHostname = hostname;
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -163,9 +187,16 @@ function stop() {
   server = null;
 }
 
+function requestCloseTab(hostname) {
+  if (hostname && typeof hostname === 'string') {
+    pendingCloseHostname = hostname.trim();
+  }
+}
+
 module.exports = {
   start,
   stop,
+  requestCloseTab,
   LOOPBACK,
   DEFAULT_PORT,
 };

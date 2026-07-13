@@ -291,20 +291,44 @@ function initTriggersSection() {
     renderFlagged();
   }
 
-  idleEnabled.addEventListener('change', () => {
-    if (!syncing) persistTriggers();
+  async function requestDisableFriction(triggerId, checkbox) {
+    syncing = true;
+    checkbox.checked = true;
+    syncing = false;
+    await window.sirenGuardSettings.requestFriction('disable-trigger', {
+      triggerId,
+    });
+  }
+
+  idleEnabled.addEventListener('change', async () => {
+    if (syncing) return;
+    if (!idleEnabled.checked) {
+      await requestDisableFriction('idle', idleEnabled);
+      return;
+    }
+    await persistTriggers();
   });
   idleThreshold.addEventListener('change', () => {
     if (!syncing) persistTriggers();
   });
-  appEnabled.addEventListener('change', () => {
-    if (!syncing) persistTriggers();
+  appEnabled.addEventListener('change', async () => {
+    if (syncing) return;
+    if (!appEnabled.checked) {
+      await requestDisableFriction('app-detection', appEnabled);
+      return;
+    }
+    await persistTriggers();
   });
   appDelay.addEventListener('change', () => {
     if (!syncing) persistTriggers();
   });
-  websiteEnabled.addEventListener('change', () => {
-    if (!syncing) persistTriggers();
+  websiteEnabled.addEventListener('change', async () => {
+    if (syncing) return;
+    if (!websiteEnabled.checked) {
+      await requestDisableFriction('website-detection', websiteEnabled);
+      return;
+    }
+    await persistTriggers();
   });
   websiteDelay.addEventListener('change', () => {
     if (!syncing) persistTriggers();

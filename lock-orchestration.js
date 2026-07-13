@@ -38,8 +38,15 @@ function getCancelWindowMs() {
   return seconds * 1000;
 }
 
-function arm() {
+function arm(options = {}) {
   clearTimer();
+
+  if (options && options.suppressCancel) {
+    emitArmed(false);
+    lockScreen();
+    return;
+  }
+
   emitArmed(true);
 
   timer = setTimeout(() => {

@@ -12,4 +12,9 @@ contextBridge.exposeInMainWorld('sirenGuardSettings', {
     ipcRenderer.on('settings:changed', (_event, settings) => callback(settings));
   },
   getRunningApps: () => ipcRenderer.invoke('get-running-apps'),
+  requestFriction: (kind, payload) =>
+    ipcRenderer.invoke('friction:request', { kind, payload }),
+  uploadReminderMedia: (payload) => ipcRenderer.invoke('reminder:upload', payload),
+  getReminderPreview: (filename) =>
+    ipcRenderer.invoke('reminder:get-preview', filename),
 });
