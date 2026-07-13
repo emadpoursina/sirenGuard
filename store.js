@@ -1,4 +1,26 @@
+const fs = require('fs');
+const path = require('path');
 const Store = require('electron-store').default;
+
+const RE_ENTRY_BLOCK_SEC = 5 * 60;
+const ESCALATION_WINDOW_SEC = 15 * 60;
+const MIN_WATCH_SEC = 10;
+
+function defaultReminder() {
+  return {
+    mediaType: null,
+    mediaPath: null,
+    caption: '',
+    minWatchSec: MIN_WATCH_SEC,
+  };
+}
+
+function defaultSafeApp() {
+  return {
+    name: null,
+    bundleId: null,
+  };
+}
 
 function defaultTriggersArray() {
   return [
@@ -35,6 +57,10 @@ const store = new Store({
     buttonColor: '#D9534F',
     websiteServerPort: 45117,
     triggers: defaultTriggersArray(),
+    reminder: defaultReminder(),
+    safeApp: defaultSafeApp(),
+    confirmationPhrase: '',
+    overrideLog: [],
   },
 });
 
@@ -165,6 +191,76 @@ function setWebsiteServerPort(port) {
   store.set('websiteServerPort', port);
 }
 
+function getReminder() {
+  const reminder = store.get('reminder');
+  if (!reminder || typeof reminder !== 'object') {
+    return defaultReminder();
+  }
+  return { ...defaultReminder(), ...reminder };
+}
+
+function setReminder(reminder) {
+  if (!reminder || typeof reminder !== 'object') {
+    return;
+  }
+  store.set('reminder', { ...getReminder(), ...reminder });
+}
+
+function getSafeApp() {
+  const safeApp = store.get('safeApp');
+  if (!safeApp || typeof safeApp !== 'object') {
+    return defaultSafeApp();
+  }
+  return { ...defaultSafeApp(), ...safeApp };
+}
+
+function setSafeApp(safeApp) {
+  if (!safeApp || typeof safeApp !== 'object') {
+    return;
+  }
+  store.set('safeApp', { ...getSafeApp(), ...safeApp });
+}
+
+function getConfirmationPhrase() {
+  const phrase = store.get('confirmationPhrase');
+  return typeof phrase === 'string' ? phrase : '';
+}
+
+function setConfirmationPhrase(phrase) {
+  store.set('confirmationPhrase', typeof phrase === 'string' ? phrase : '');
+}
+
+function getOverrideLog() {
+  const log = store.get('overrideLog');
+  return Array.isArray(log) ? log : [];
+}
+
+function appendOverrideLog(entry) {
+  if (!entry || typeof entry !== 'object' || !entry.kind) {
+    return;
+  }
+  const next = [
+    ...getOverrideLog(),
+    {
+      timestamp: entry.timestamp ?? Date.now(),
+      kind: entry.kind,
+    },
+  ];
+  store.set('overrideLog', next);
+}
+
+function getReminderMediaDir(userDataPath) {
+  const base =
+    userDataPath ?? require('electron').app.getPath('userData');
+  return path.join(base, 'reminder-media');
+}
+
+function ensureReminderMediaDir(userDataPath) {
+  const dir = getReminderMediaDir(userDataPath);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 function getAllSettings() {
   return {
     buttonPosition: getButtonPosition(),
@@ -175,6 +271,10 @@ function getAllSettings() {
     buttonColor: getButtonColor(),
     websiteServerPort: getWebsiteServerPort(),
     triggers: getTriggerConfig(),
+    reminder: getReminder(),
+    safeApp: getSafeApp(),
+    confirmationPhrase: getConfirmationPhrase(),
+    overrideLog: getOverrideLog(),
   };
 }
 
@@ -223,6 +323,18 @@ function updateSettings(partial) {
     });
 
     setTriggerConfig(merged);
+  }
+  if (partial.reminder !== undefined) {
+    setReminder(partial.reminder);
+  }
+  if (partial.safeApp !== undefined) {
+    setSafeApp(partial.safeApp);
+  }
+  if (partial.confirmationPhrase !== undefined) {
+    setConfirmationPhrase(partial.confirmationPhrase);
+  }
+  if (partial.overrideLog !== undefined && Array.isArray(partial.overrideLog)) {
+    store.set('overrideLog', partial.overrideLog);
   }
 }
 
@@ -288,6 +400,11 @@ function migrateTriggersSchema() {
 }
 
 module.exports = {
+  RE_ENTRY_BLOCK_SEC,
+  ESCALATION_WINDOW_SEC,
+  MIN_WATCH_SEC,
+  defaultReminder,
+  defaultSafeApp,
   getButtonPosition,
   setButtonPosition,
   getLaunchAtLogin,
@@ -316,6 +433,16 @@ module.exports = {
   setWebsiteTargets,
   getWebsiteServerPort,
   setWebsiteServerPort,
+  getReminder,
+  setReminder,
+  getSafeApp,
+  setSafeApp,
+  getConfirmationPhrase,
+  setConfirmationPhrase,
+  getOverrideLog,
+  appendOverrideLog,
+  getReminderMediaDir,
+  ensureReminderMediaDir,
   migrateTriggersSchema,
   getAllSettings,
   updateSettings,

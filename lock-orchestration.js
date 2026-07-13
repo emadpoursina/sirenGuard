@@ -67,4 +67,5 @@ module.exports = {
   arm,
   cancel,
   isArmed,
+  lockScreen,
 };

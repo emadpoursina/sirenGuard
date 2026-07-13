@@ -150,6 +150,80 @@ intents:
           - dashboard-shell
         run_id: run-sirenguard-005
         completed_at: 2026-07-12T07:49:18.028Z
+  - id: break-the-loop
+    title: Break the loop — meaningful reminder + stricter actions + escalation +
+      disable friction
+    status: in_progress
+    work_items:
+      - id: break-the-loop-store
+        title: Break-the-loop settings store + asset storage
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-sirenguard-007
+        completed_at: 2026-07-13T17:56:00.993Z
+      - id: reminder-overlay
+        title: Reminder overlay window + renderer
+        status: pending
+        complexity: high
+        mode: validate
+        depends_on:
+          - break-the-loop-store
+      - id: app-consequence-action
+        title: App force-quit + re-entry block action
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - break-the-loop-store
+      - id: website-consequence-action
+        title: Website tab-close + re-entry block action
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - break-the-loop-store
+      - id: idle-consequence-action
+        title: Idle redirect-to-safe-app + lock action
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - break-the-loop-store
+        run_id: run-sirenguard-007
+        completed_at: 2026-07-13T17:56:00.993Z
+      - id: lock-orchestration-refactor
+        title: Lock orchestration staged pipeline + escalation
+        status: pending
+        complexity: high
+        mode: validate
+        depends_on:
+          - break-the-loop-store
+          - reminder-overlay
+          - app-consequence-action
+          - website-consequence-action
+          - idle-consequence-action
+      - id: disable-quit-friction
+        title: Disable / quit / override friction gate
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - break-the-loop-store
+      - id: dashboard-reminder-section
+        title: Dashboard Reminder section
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - break-the-loop-store
+      - id: floating-button-drag-fix
+        title: Floating button drag-and-drop repositioning (fix)
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on: []
   - id: triggers-and-settings
     title: Multiple trigger types and settings screen
     status: completed
@@ -286,3 +360,14 @@ runs:
           mode: confirm
       started: 2026-07-12T13:03:43.731Z
       completed: 2026-07-12T13:06:13.295Z
+    - id: run-sirenguard-007
+      scope: batch
+      work_items:
+        - id: break-the-loop-store
+          intent: break-the-loop
+          mode: autopilot
+        - id: idle-consequence-action
+          intent: break-the-loop
+          mode: autopilot
+      started: 2026-07-13T17:54:27.571Z
+      completed: 2026-07-13T17:56:00.993Z

@@ -306,3 +306,89 @@ test('resetSettings clears the store so triggers become undefined', () => {
   expect(store.getTriggerConfig()).toBeUndefined();
   expect(store.getButtonColor()).toBeUndefined();
 });
+
+test('default reminder and safeApp shapes match break-the-loop spec', () => {
+  const reminder = store.getReminder();
+  expect(reminder.mediaType).toBeNull();
+  expect(reminder.mediaPath).toBeNull();
+  expect(reminder.caption).toBe('');
+  expect(reminder.minWatchSec).toBe(store.MIN_WATCH_SEC);
+
+  const safeApp = store.getSafeApp();
+  expect(safeApp.name).toBeNull();
+  expect(safeApp.bundleId).toBeNull();
+  expect(store.getConfirmationPhrase()).toBe('');
+  expect(store.getOverrideLog()).toEqual([]);
+});
+
+test('duration constants export fixed defaults in seconds', () => {
+  expect(store.RE_ENTRY_BLOCK_SEC).toBe(300);
+  expect(store.ESCALATION_WINDOW_SEC).toBe(900);
+  expect(store.MIN_WATCH_SEC).toBe(10);
+});
+
+test('reminder and safeApp accessors round-trip partial updates', () => {
+  store.setReminder({ mediaType: 'image', caption: 'Focus' });
+  expect(store.getReminder().mediaType).toBe('image');
+  expect(store.getReminder().caption).toBe('Focus');
+  expect(store.getReminder().minWatchSec).toBe(10);
+
+  store.setSafeApp({ name: 'Notes', bundleId: 'com.apple.Notes' });
+  expect(store.getSafeApp().name).toBe('Notes');
+  expect(store.getSafeApp().bundleId).toBe('com.apple.Notes');
+});
+
+test('appendOverrideLog appends timestamped entries', () => {
+  store.appendOverrideLog({ kind: 'disable-trigger', timestamp: 1000 });
+  store.appendOverrideLog({ kind: 'quit-app' });
+  const log = store.getOverrideLog();
+  expect(log.length).toBe(2);
+  expect(log[0]).toEqual({ timestamp: 1000, kind: 'disable-trigger' });
+  expect(log[1].kind).toBe('quit-app');
+  expect(typeof log[1].timestamp).toBe('number');
+});
+
+test('getReminderMediaDir resolves under userData', () => {
+  const dir = store.getReminderMediaDir('/tmp/siren-test');
+  expect(dir).toBe('/tmp/siren-test/reminder-media');
+});
+
+test('ensureReminderMediaDir creates directory', () => {
+  const mkdirCalls = [];
+  const originalMkdir = require('fs').mkdirSync;
+  require('fs').mkdirSync = (dir, opts) => {
+    mkdirCalls.push({ dir, opts });
+  };
+  try {
+    const dir = store.ensureReminderMediaDir('/tmp/siren-test');
+    expect(dir).toBe('/tmp/siren-test/reminder-media');
+    expect(mkdirCalls).toEqual([
+      { dir: '/tmp/siren-test/reminder-media', opts: { recursive: true } },
+    ]);
+  } finally {
+    require('fs').mkdirSync = originalMkdir;
+  }
+});
+
+test('updateSettings merges break-the-loop keys', () => {
+  store.updateSettings({
+    reminder: { mediaType: 'video', mediaPath: 'clip.mp4' },
+    safeApp: { name: 'Safari' },
+    confirmationPhrase: 'break the loop',
+    overrideLog: [{ timestamp: 1, kind: 'override' }],
+  });
+  const all = store.getAllSettings();
+  expect(all.reminder.mediaType).toBe('video');
+  expect(all.reminder.mediaPath).toBe('clip.mp4');
+  expect(all.safeApp.name).toBe('Safari');
+  expect(all.confirmationPhrase).toBe('break the loop');
+  expect(all.overrideLog).toEqual([{ timestamp: 1, kind: 'override' }]);
+});
+
+test('getAllSettings includes break-the-loop keys', () => {
+  const all = store.getAllSettings();
+  expect(all).toHaveProperty('reminder');
+  expect(all).toHaveProperty('safeApp');
+  expect(all).toHaveProperty('confirmationPhrase');
+  expect(all).toHaveProperty('overrideLog');
+});
