@@ -135,9 +135,28 @@ async function runCloseTabWatch() {
 }
 
 async function evaluateActiveTab() {
+  evaluateChain = evaluateChain
+    .then(() => evaluateActiveTabInner())
+    .catch(() => {});
+  await evaluateChain;
+}
+
+let evaluateChain = Promise.resolve();
+
+async function evaluateActiveTabInner() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const tab = tabs[0];
-  if (!tab || !tab.url || tab.url.startsWith('chrome://')) {
+  if (!tab) {
+    return;
+  }
+  if (!tab.url || tab.url === 'about:blank') {
+    return;
+  }
+  if (
+    tab.url.startsWith('chrome://') ||
+    tab.url.startsWith('chrome-extension://') ||
+    tab.url.startsWith('edge://')
+  ) {
     if (matchedHostname) {
       await sendLeave(matchedHostname, '');
       matchedHostname = null;
