@@ -1,11 +1,24 @@
-importScripts('hostname-match.js');
+importScripts('hostname-match.js', 'config.js');
 
-const DEFAULT_BASE_URL = 'http://127.0.0.1:45117';
 const SYNC_INTERVAL_MS = 60_000;
-
 const CLOSE_TAB_POLL_MS = 2000;
 
-let baseUrl = DEFAULT_BASE_URL;
+let baseUrl = '';
+try {
+  if (!DESKTOP_APP_URL || typeof DESKTOP_APP_URL !== 'string') {
+    throw new Error('missing DESKTOP_APP_URL');
+  }
+  const parsed = new URL(DESKTOP_APP_URL);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('invalid protocol');
+  }
+  baseUrl = parsed.origin;
+} catch {
+  console.error(
+    'siren-guard: set DESKTOP_APP_URL in siren-guard-extension/config.js (e.g. http://sirenguard.localhost)'
+  );
+}
+
 let targets = [];
 let matchedHostname = null;
 let syncTimer = null;
@@ -18,9 +31,16 @@ function isMatched(hostname) {
 }
 
 async function fetchTargets() {
+  if (!baseUrl) {
+    return;
+  }
+
   try {
     const res = await fetch(`${baseUrl}/sites`);
     if (!res.ok) {
+      console.error(
+        `siren-guard: desktop app returned ${res.status} at ${baseUrl}`
+      );
       return;
     }
     const data = await res.json();
@@ -28,11 +48,17 @@ async function fetchTargets() {
       targets = data.targets.map((t) => String(t));
     }
   } catch {
-    // Desktop app may be offline; keep cached targets.
+    console.error(
+      `siren-guard: cannot reach desktop app at ${baseUrl} — is Siren Guard running?`
+    );
   }
 }
 
 async function postJson(path, body) {
+  if (!baseUrl) {
+    return;
+  }
+
   try {
     await fetch(`${baseUrl}${path}`, {
       method: 'POST',
@@ -40,7 +66,9 @@ async function postJson(path, body) {
       body: JSON.stringify(body),
     });
   } catch {
-    // Ignore transient desktop connectivity errors.
+    console.error(
+      `siren-guard: cannot reach desktop app at ${baseUrl} — is Siren Guard running?`
+    );
   }
 }
 
@@ -61,6 +89,10 @@ async function sendLeave(hostname, url) {
 }
 
 async function pollCloseTab() {
+  if (!baseUrl) {
+    return;
+  }
+
   try {
     const res = await fetch(`${baseUrl}/close-tab`);
     if (!res.ok) {

@@ -17,8 +17,6 @@ let websiteTrigger = { targets: ['instagram.com', '*.youtube.com'] };
 
 mock.module('../store.js', () => ({
   getWebsiteDetectionTrigger: () => websiteTrigger,
-  getWebsiteServerPort: () => 0,
-  setWebsiteServerPort: () => {},
 }));
 
 const websiteServer = await import('../website-server.js');
@@ -77,10 +75,11 @@ afterEach(() => {
   mock.restore();
 });
 
-test('GET /sites returns configured targets', async () => {
+test('GET /sites returns configured targets and listening port', async () => {
   const res = await request('GET', '/sites');
   expect(res.status).toBe(200);
   expect(res.body.targets).toEqual(['instagram.com', '*.youtube.com']);
+  expect(res.body.port).toBe(port);
   expect(res.headers['access-control-allow-origin']).toBe('*');
 });
 

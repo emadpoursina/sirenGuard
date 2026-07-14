@@ -1,12 +1,8 @@
 const http = require('http');
-const {
-  getWebsiteDetectionTrigger,
-  getWebsiteServerPort,
-  setWebsiteServerPort,
-} = require('./store');
+const { websiteServerPort } = require('./config');
+const { getWebsiteDetectionTrigger } = require('./store');
 const websiteDetectionTrigger = require('./website-detection-trigger');
 
-const DEFAULT_PORT = 45117;
 const LOOPBACK = '127.0.0.1';
 
 let server = null;
@@ -66,7 +62,12 @@ async function handleRequest(req, res) {
     if (req.method === 'GET' && url.pathname === '/sites') {
       const trigger = getWebsiteDetectionTrigger();
       const targets = Array.isArray(trigger?.targets) ? trigger.targets : [];
-      sendJson(res, 200, { targets });
+      const address = server?.address();
+      const port =
+        address && typeof address === 'object' && address.port
+          ? address.port
+          : resolvePort();
+      sendJson(res, 200, { targets, port });
       return;
     }
 
@@ -119,6 +120,14 @@ async function handleRequest(req, res) {
   }
 }
 
+function resolvePort(options = {}) {
+  const port = Number(options.port ?? websiteServerPort);
+  if (!Number.isFinite(port) || port <= 0) {
+    return null;
+  }
+  return port;
+}
+
 function listenOnPort(port) {
   return new Promise((resolve, reject) => {
     const nextServer = http.createServer(handleRequest);
@@ -145,36 +154,23 @@ async function start(options = {}) {
     return;
   }
 
-  const configuredPort = Number(options.port ?? getWebsiteServerPort());
-  const primaryPort =
-    Number.isFinite(configuredPort) && configuredPort > 0
-      ? configuredPort
-      : DEFAULT_PORT;
-
-  try {
-    await listenOnPort(primaryPort);
-    if (primaryPort !== getWebsiteServerPort()) {
-      setWebsiteServerPort(primaryPort);
-    }
-    return;
-  } catch (err) {
-    if (err.code !== 'EADDRINUSE') {
-      console.error('siren-guard: website-server failed to start', err.message);
-      return;
-    }
+  const port = resolvePort(options);
+  if (!port) {
     console.error(
-      `siren-guard: website-server port ${primaryPort} in use`
+      'siren-guard: website-server failed to start — set a valid websiteServerPort in config.js'
     );
+    return;
   }
 
-  const fallbackPort = primaryPort + 1;
   try {
-    await listenOnPort(fallbackPort);
-    setWebsiteServerPort(fallbackPort);
-    console.error(
-      `siren-guard: website-server using fallback port ${fallbackPort}`
-    );
+    await listenOnPort(port);
   } catch (err) {
+    if (err.code === 'EADDRINUSE') {
+      console.error(
+        `siren-guard: website-server port ${port} is already in use — free the port or change config.js`
+      );
+      return;
+    }
     console.error('siren-guard: website-server failed to start', err.message);
   }
 }
@@ -198,5 +194,5 @@ module.exports = {
   stop,
   requestCloseTab,
   LOOPBACK,
-  DEFAULT_PORT,
+  resolvePort,
 };

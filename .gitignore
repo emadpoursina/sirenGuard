@@ -3,6 +3,8 @@ dist/
 out/
 .DS_Store
 scratch/
+config.js
+siren-guard-extension/config.js
 # Personal AiNative symlinks (machine-local)
 .cursor/rules/personal
 docs/8. agents

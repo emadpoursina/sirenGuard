@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const Store = require('electron-store').default;
+const { websiteServerPort } = require('./config');
 
 const RE_ENTRY_BLOCK_SEC = 5 * 60;
 const ESCALATION_WINDOW_SEC = 15 * 60;
@@ -55,7 +56,6 @@ const store = new Store({
     cancelWindowSeconds: 2,
     buttonOpacity: 0.4,
     buttonColor: '#D9534F',
-    websiteServerPort: 45117,
     triggers: defaultTriggersArray(),
     reminder: defaultReminder(),
     safeApp: defaultSafeApp(),
@@ -185,11 +185,8 @@ function setWebsiteTargets(targets) {
 }
 
 function getWebsiteServerPort() {
-  return store.get('websiteServerPort');
-}
-
-function setWebsiteServerPort(port) {
-  store.set('websiteServerPort', port);
+  const port = Number(websiteServerPort);
+  return Number.isFinite(port) && port > 0 ? port : null;
 }
 
 function getReminder() {
@@ -329,9 +326,6 @@ function updateSettings(partial) {
   if (partial.buttonColor !== undefined) {
     setButtonColor(partial.buttonColor);
   }
-  if (partial.websiteServerPort !== undefined) {
-    setWebsiteServerPort(partial.websiteServerPort);
-  }
   if (partial.triggers !== undefined && Array.isArray(partial.triggers)) {
     const current = getTriggerConfig();
     if (!Array.isArray(current)) {
@@ -463,7 +457,6 @@ module.exports = {
   getWebsiteTargets,
   setWebsiteTargets,
   getWebsiteServerPort,
-  setWebsiteServerPort,
   getReminder,
   setReminder,
   getSafeApp,

@@ -15,8 +15,6 @@ mock.module('../website-detection-trigger.js', () => ({
 
 mock.module('../store.js', () => ({
   getWebsiteDetectionTrigger: () => ({ targets: ['example.com'] }),
-  getWebsiteServerPort: () => 0,
-  setWebsiteServerPort: () => {},
 }));
 
 const websiteServer = await import('../website-server.js');
