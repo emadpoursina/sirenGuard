@@ -1,5 +1,6 @@
 {
   "name": "siren-guard",
+  "productName": "Siren Guard",
   "version": "0.1.0",
   "description": "macOS menu-bar utility with a floating lock button",
   "main": "main.js",
@@ -7,13 +8,45 @@
   "packageManager": "bun@1.3.9",
   "scripts": {
     "start": "electron .",
-    "test": "bun test $(ls test/*.test.js | grep -v lock-orchestration-pipeline) && bun test test/zz-lock-orchestration-pipeline.test.js"
+    "test": "bun test $(ls test/*.test.js | grep -v lock-orchestration-pipeline) && bun test test/zz-lock-orchestration-pipeline.test.js",
+    "build": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "build:dir": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir"
   },
   "dependencies": {
     "electron-store": "^11.0.2",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "electron": "^43.0.0"
+    "electron": "^43.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.sirenguard.app",
+    "productName": "Siren Guard",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/.git/**",
+      "!test/**",
+      "!.specs-fire/**",
+      "!.specsmd/**",
+      "!.cursor/**",
+      "!scratch/**",
+      "!dist/**",
+      "!node_modules/.cache/**"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "identity": null,
+      "gatekeeperAssess": false,
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/app-icon.png"
+    }
   }
 }
