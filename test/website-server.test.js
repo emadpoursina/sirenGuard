@@ -75,6 +75,12 @@ afterEach(() => {
   mock.restore();
 });
 
+test('GET /health returns ok', async () => {
+  const res = await request('GET', '/health');
+  expect(res.status).toBe(200);
+  expect(res.body.ok).toBe(true);
+});
+
 test('GET /sites returns configured targets and listening port', async () => {
   const res = await request('GET', '/sites');
   expect(res.status).toBe(200);

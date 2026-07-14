@@ -1,7 +1,9 @@
 importScripts('hostname-match.js', 'config.js');
 
 const SYNC_INTERVAL_MS = 60_000;
-const CLOSE_TAB_POLL_MS = 2000;
+const CLOSE_TAB_ERROR_RETRY_MS = 5000;
+
+let closeTabWatchStarted = false;
 
 let baseUrl = '';
 try {
@@ -88,39 +90,47 @@ async function sendLeave(hostname, url) {
   });
 }
 
-async function pollCloseTab() {
+async function pollCloseTabOnce() {
   if (!baseUrl) {
     return;
   }
 
+  const res = await fetch(`${baseUrl}/close-tab`);
+  if (!res.ok) {
+    throw new Error(`close-tab status ${res.status}`);
+  }
+  const data = await res.json();
+  if (!data.close || !data.hostname) {
+    return;
+  }
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = tabs[0];
+  if (!tab?.url || tab.url.startsWith('chrome://')) {
+    return;
+  }
+  let hostname;
   try {
-    const res = await fetch(`${baseUrl}/close-tab`);
-    if (!res.ok) {
-      return;
-    }
-    const data = await res.json();
-    if (!data.close || !data.hostname) {
-      return;
-    }
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tab = tabs[0];
-    if (!tab?.url || tab.url.startsWith('chrome://')) {
-      return;
-    }
-    let hostname;
-    try {
-      hostname = new URL(tab.url).hostname;
-    } catch {
-      return;
-    }
-    if (hostname === data.hostname || isMatched(hostname)) {
-      await chrome.tabs.remove(tab.id);
-      if (matchedHostname === hostname) {
-        matchedHostname = null;
-      }
-    }
+    hostname = new URL(tab.url).hostname;
   } catch {
-    // Desktop app may be offline.
+    return;
+  }
+  if (hostname === data.hostname || isMatched(hostname)) {
+    await chrome.tabs.remove(tab.id);
+    if (matchedHostname === hostname) {
+      matchedHostname = null;
+    }
+  }
+}
+
+async function runCloseTabWatch() {
+  while (baseUrl) {
+    try {
+      await pollCloseTabOnce();
+    } catch {
+      await new Promise((resolve) => {
+        setTimeout(resolve, CLOSE_TAB_ERROR_RETRY_MS);
+      });
+    }
   }
 }
 
@@ -204,4 +214,7 @@ chrome.webNavigation.onCommitted.addListener((details) => {
 
 fetchTargets();
 startSyncTimer();
-setInterval(pollCloseTab, CLOSE_TAB_POLL_MS);
+if (!closeTabWatchStarted) {
+  closeTabWatchStarted = true;
+  runCloseTabWatch();
+}

@@ -72,7 +72,7 @@ test('POST /close-tab then GET /close-tab returns pending hostname once', async 
   const get = await request('GET', '/close-tab');
   expect(get.body.close).toBe(true);
   expect(get.body.hostname).toBe('example.com');
-  const again = await request('GET', '/close-tab');
+  const again = await request('GET', '/close-tab?wait=0');
   expect(again.body.close).toBe(false);
 });
 
