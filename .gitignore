@@ -7,6 +7,7 @@ config.js
 siren-guard-extension/config.js
 # Personal AiNative symlinks (machine-local)
 .cursor/rules/personal
+.cursor/*.log
 docs/8. agents
 docs/2. ai-workflows
 
