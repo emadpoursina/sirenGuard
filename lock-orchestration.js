@@ -91,7 +91,7 @@ async function runConsequence(triggerKind, context) {
     return;
   }
   if (triggerKind === 'manual') {
-    lockScreen();
+    module.exports.lockScreen();
   }
 }
 
@@ -146,26 +146,11 @@ function arm(options = {}) {
   currentTriggerKind = triggerKind;
   currentContext = context;
   cancelSuppressed = suppressCancel;
-  escalated = triggerKind !== 'manual' ? checkEscalation(triggerKind) : false;
+  escalated = checkEscalation(triggerKind);
 
-  if (triggerKind !== 'manual') {
-    recordFall(triggerKind);
-  }
+  recordFall(triggerKind);
 
   emitArmed(true);
-
-  if (triggerKind === 'manual') {
-    timer = setTimeout(() => {
-      if (token !== runToken) {
-        return;
-      }
-      timer = null;
-      emitArmed(false);
-      phase = 'idle';
-      lockScreen();
-    }, getCancelWindowMs());
-    return;
-  }
 
   const skipCancelWindow = suppressCancel || escalated;
   if (skipCancelWindow) {
