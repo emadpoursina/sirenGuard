@@ -83,7 +83,7 @@ async function runConsequence(triggerKind, context) {
     return;
   }
   if (triggerKind === 'website') {
-    await executeWebsiteConsequence(context?.hostname);
+    await executeWebsiteConsequence(context?.hostname, context?.target);
     return;
   }
   if (triggerKind === 'idle') {

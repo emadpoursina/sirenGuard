@@ -80,4 +80,13 @@ test('requestCloseTab sets hostname for extension poll', async () => {
   websiteServer.requestCloseTab('youtube.com');
   const get = await request('GET', '/close-tab');
   expect(get.body.hostname).toBe('youtube.com');
+  expect(get.body.target).toBe(null);
+});
+
+test('requestCloseTab forwards a path-specific target', async () => {
+  websiteServer.requestCloseTab('youtube.com', 'youtube.com/shorts');
+  const get = await request('GET', '/close-tab');
+  expect(get.body.close).toBe(true);
+  expect(get.body.hostname).toBe('youtube.com');
+  expect(get.body.target).toBe('youtube.com/shorts');
 });

@@ -5,8 +5,8 @@ const siteMatchCalls = [];
 const siteLeaveCalls = [];
 
 mock.module('../website-detection-trigger.js', () => ({
-  onSiteMatch: (hostname, url) => {
-    siteMatchCalls.push({ hostname, url });
+  onSiteMatch: (hostname, url, target) => {
+    siteMatchCalls.push({ hostname, url, target });
   },
   onSiteLeave: () => {
     siteLeaveCalls.push(true);
@@ -99,6 +99,18 @@ test('POST /site-match forwards to website-detection trigger', async () => {
   expect(res.body.ok).toBe(true);
   expect(siteMatchCalls.length).toBe(1);
   expect(siteMatchCalls[0].hostname).toBe('instagram.com');
+});
+
+test('POST /site-match forwards the matched target pattern', async () => {
+  const res = await request('POST', '/site-match', {
+    hostname: 'youtube.com',
+    url: 'https://youtube.com/shorts/abc',
+    target: 'youtube.com/shorts',
+    timestamp: Date.now(),
+  });
+  expect(res.status).toBe(200);
+  expect(siteMatchCalls.length).toBe(1);
+  expect(siteMatchCalls[0].target).toBe('youtube.com/shorts');
 });
 
 test('POST /site-match rejects missing hostname', async () => {

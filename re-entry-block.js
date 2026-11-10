@@ -21,11 +21,24 @@ function createReEntryBlockRegistry(durationSec) {
     return true;
   }
 
+  function find(predicate, now = Date.now()) {
+    for (const [key, expiresAt] of blocks) {
+      if (now >= expiresAt) {
+        blocks.delete(key);
+        continue;
+      }
+      if (predicate(key)) {
+        return key;
+      }
+    }
+    return null;
+  }
+
   function clear() {
     blocks.clear();
   }
 
-  return { add, isBlocked, clear };
+  return { add, isBlocked, find, clear };
 }
 
 function appIdentityKey(app) {

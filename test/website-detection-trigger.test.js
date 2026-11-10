@@ -1,6 +1,6 @@
 import { test, expect, mock, beforeEach, afterEach } from 'bun:test';
 
-const lockCalls = { arm: 0, cancel: 0, armed: false, suppress: false };
+const lockCalls = { arm: 0, cancel: 0, armed: false, suppress: false, context: null };
 
 let websiteTriggerConfig = {
   enabled: true,
@@ -15,6 +15,7 @@ function applyMocks() {
     arm: (opts) => {
       lockCalls.arm += 1;
       lockCalls.suppress = Boolean(opts?.suppressCancel);
+      lockCalls.context = opts?.context || null;
       lockCalls.armed = true;
     },
     cancel: () => {
@@ -43,6 +44,8 @@ beforeEach(async () => {
   lockCalls.arm = 0;
   lockCalls.cancel = 0;
   lockCalls.armed = false;
+  lockCalls.suppress = false;
+  lockCalls.context = null;
   websiteTriggerConfig = {
     enabled: true,
     delaySec: 0.05,
@@ -91,4 +94,46 @@ test('stop clears armed state owned by website trigger', async () => {
   await new Promise((resolve) => setTimeout(resolve, 80));
   trigger.stop();
   expect(lockCalls.cancel).toBe(1);
+});
+
+test('path-specific block arms only for matching paths', () => {
+  trigger.registerSiteBlock('youtube.com/shorts');
+  lockCalls.arm = 0;
+  lockCalls.context = null;
+
+  trigger.onSiteMatch('youtube.com', 'https://youtube.com/watch');
+  expect(lockCalls.arm).toBe(0);
+
+  trigger.onSiteMatch('youtube.com', 'https://youtube.com/shorts/abc');
+  expect(lockCalls.arm).toBe(1);
+  expect(lockCalls.suppress).toBe(true);
+  expect(lockCalls.context.target).toBe('youtube.com/shorts');
+});
+
+test('path-specific block does not arm for other paths', () => {
+  trigger.registerSiteBlock('youtube.com/shorts');
+  lockCalls.arm = 0;
+
+  trigger.onSiteMatch('youtube.com', 'https://youtube.com/watch?v=1');
+  expect(lockCalls.arm).toBe(0);
+  trigger.onSiteLeave();
+});
+
+test('isSiteBlocked matches only the blocked path', () => {
+  trigger.registerSiteBlock('youtube.com/shorts');
+  expect(trigger.isSiteBlocked('https://youtube.com/shorts/abc')).toBe(true);
+  expect(trigger.isSiteBlocked('https://youtube.com/watch')).toBe(false);
+});
+
+test('match context carries the matched target', async () => {
+  trigger.onSiteMatch(
+    'youtube.com',
+    'https://youtube.com/shorts/abc',
+    'youtube.com/shorts'
+  );
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  expect(lockCalls.context).toEqual({
+    hostname: 'youtube.com',
+    target: 'youtube.com/shorts',
+  });
 });

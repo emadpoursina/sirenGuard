@@ -6,7 +6,7 @@ const websiteDetectionTrigger = require('./website-detection-trigger');
 const LOOPBACK = '127.0.0.1';
 
 let server = null;
-let pendingCloseHostname = null;
+let pendingCloseRequest = null;
 const closeTabWaiters = [];
 const CLOSE_TAB_LONG_POLL_MS = 60_000;
 
@@ -28,20 +28,23 @@ function removeCloseTabWaiter(waiter) {
   }
 }
 
-function replyCloseTab(res, close, hostname) {
+function replyCloseTab(res, close, hostname, target) {
   if (res.writableEnded) {
     return;
   }
   sendJson(res, 200, {
     close: Boolean(close),
     hostname: hostname || null,
+    target: target || null,
   });
 }
 
-function deliverCloseTab(hostname) {
-  const trimmed =
+function deliverCloseTab(hostname, target) {
+  const trimmedHostname =
     typeof hostname === 'string' && hostname.trim() ? hostname.trim() : null;
-  if (!trimmed) {
+  const trimmedTarget =
+    typeof target === 'string' && target.trim() ? target.trim() : null;
+  if (!trimmedHostname && !trimmedTarget) {
     return;
   }
 
@@ -49,12 +52,12 @@ function deliverCloseTab(hostname) {
     const waiters = closeTabWaiters.splice(0);
     for (const waiter of waiters) {
       clearTimeout(waiter.timeout);
-      replyCloseTab(waiter.res, true, trimmed);
+      replyCloseTab(waiter.res, true, trimmedHostname, trimmedTarget);
     }
     return;
   }
 
-  pendingCloseHostname = trimmed;
+  pendingCloseRequest = { hostname: trimmedHostname, target: trimmedTarget };
 }
 
 function corsHeaders() {
@@ -133,7 +136,13 @@ async function handleRequest(req, res) {
         return;
       }
       const matchUrl = typeof body.url === 'string' ? body.url : '';
-      websiteDetectionTrigger.onSiteMatch(hostname, matchUrl);
+      const target =
+        typeof body.target === 'string' ? body.target.trim() : '';
+      websiteDetectionTrigger.onSiteMatch(
+        hostname,
+        matchUrl,
+        target || undefined
+      );
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -145,16 +154,16 @@ async function handleRequest(req, res) {
     }
 
     if (req.method === 'GET' && url.pathname === '/close-tab') {
-      if (pendingCloseHostname) {
-        const hostname = pendingCloseHostname;
-        pendingCloseHostname = null;
-        replyCloseTab(res, true, hostname);
+      if (pendingCloseRequest) {
+        const request = pendingCloseRequest;
+        pendingCloseRequest = null;
+        replyCloseTab(res, true, request.hostname, request.target);
         return;
       }
 
       const waitMs = parseCloseTabWaitMs(url.searchParams.get('wait'));
       if (waitMs === 0) {
-        replyCloseTab(res, false, null);
+        replyCloseTab(res, false, null, null);
         return;
       }
 
@@ -162,7 +171,7 @@ async function handleRequest(req, res) {
         res,
         timeout: setTimeout(() => {
           removeCloseTabWaiter(waiter);
-          replyCloseTab(res, false, null);
+          replyCloseTab(res, false, null, null);
         }, waitMs),
       };
 
@@ -183,7 +192,9 @@ async function handleRequest(req, res) {
         sendJson(res, 400, { ok: false, error: 'hostname required' });
         return;
       }
-      deliverCloseTab(hostname);
+      const target =
+        typeof body.target === 'string' ? body.target.trim() : '';
+      deliverCloseTab(hostname, target);
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -257,14 +268,17 @@ function stop() {
   for (const waiter of closeTabWaiters.splice(0)) {
     clearTimeout(waiter.timeout);
   }
-  pendingCloseHostname = null;
+  pendingCloseRequest = null;
   server.close();
   server = null;
 }
 
-function requestCloseTab(hostname) {
-  if (hostname && typeof hostname === 'string') {
-    deliverCloseTab(hostname);
+function requestCloseTab(hostname, target) {
+  if (
+    (hostname && typeof hostname === 'string') ||
+    (target && typeof target === 'string')
+  ) {
+    deliverCloseTab(hostname, target);
   }
 }
 

@@ -35,8 +35,12 @@ beforeEach(async () => {
     },
   }));
   mock.module('../website-consequence-action.js', () => ({
-    executeWebsiteConsequence: async (hostname) => {
-      consequences.push({ kind: 'website', hostname });
+    executeWebsiteConsequence: async (hostname, target) => {
+      const entry = { kind: 'website', hostname };
+      if (target !== undefined) {
+        entry.target = target;
+      }
+      consequences.push(entry);
     },
   }));
   mock.module('../idle-consequence-action.js', () => ({
@@ -83,6 +87,20 @@ test('automatic arm shows reminder then completes pipeline', async () => {
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(overlayShows.length).toBe(1);
   expect(consequences[0]).toEqual({ kind: 'website', hostname: 'example.com' });
+  expect(lock.isArmed()).toBe(false);
+});
+
+test('website consequence receives the matched path target', async () => {
+  lock.arm({
+    triggerKind: 'website',
+    context: { hostname: 'youtube.com', target: 'youtube.com/shorts' },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(consequences[0]).toEqual({
+    kind: 'website',
+    hostname: 'youtube.com',
+    target: 'youtube.com/shorts',
+  });
   expect(lock.isArmed()).toBe(false);
 });
 

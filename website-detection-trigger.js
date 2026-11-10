@@ -4,24 +4,42 @@ const {
   createReEntryBlockRegistry,
   hostnameKey,
 } = require('./re-entry-block');
+const {
+  hostnameMatches,
+  normalizeWebsiteTarget,
+  urlMatchesTarget,
+} = require('./siren-guard-extension/hostname-match');
 
 const blockRegistry = createReEntryBlockRegistry(RE_ENTRY_BLOCK_SEC);
 
-function registerSiteBlock(hostname) {
-  const key = hostnameKey(hostname);
+function registerSiteBlock(site) {
+  const key = normalizeWebsiteTarget(site) || hostnameKey(site);
   if (key) {
     blockRegistry.add(key);
   }
 }
 
-function isSiteBlocked(hostname, now = Date.now()) {
-  const key = hostnameKey(hostname);
-  return key ? blockRegistry.isBlocked(key, now) : false;
+function findBlockedTarget(url, hostname, now = Date.now()) {
+  return blockRegistry.find((key) => {
+    if (url) {
+      return urlMatchesTarget(url, key);
+    }
+    return hostnameMatches(hostname, key);
+  }, now);
+}
+
+function isSiteBlocked(url, hostname, now = Date.now()) {
+  if (typeof hostname === 'number') {
+    now = hostname;
+    hostname = undefined;
+  }
+  return findBlockedTarget(url, hostname, now) !== null;
 }
 
 let weArmed = false;
 let matchedSinceMs = null;
 let matchedHostname = null;
+let matchedTarget = null;
 let armDelayTimer = null;
 
 function clearArmDelayTimer() {
@@ -41,6 +59,7 @@ function cancelArmedState() {
 function resetMatchState() {
   matchedSinceMs = null;
   matchedHostname = null;
+  matchedTarget = null;
   clearArmDelayTimer();
 }
 
@@ -55,14 +74,17 @@ function scheduleArm(delaySec) {
     ) {
       lockOrchestration.arm({
         triggerKind: 'website',
-        context: { hostname: matchedHostname },
+        context: {
+          hostname: matchedHostname,
+          target: matchedTarget,
+        },
       });
       weArmed = true;
     }
   }, delaySec * 1000);
 }
 
-function onSiteMatch(hostname, _url) {
+function onSiteMatch(hostname, url, target) {
   const config = getWebsiteDetectionTrigger();
   if (!config || !config.enabled || isTriggersSuspended()) {
     resetMatchState();
@@ -70,13 +92,14 @@ function onSiteMatch(hostname, _url) {
     return;
   }
 
-  if (isSiteBlocked(hostname)) {
+  const blockedTarget = findBlockedTarget(url, hostname);
+  if (blockedTarget) {
     resetMatchState();
     if (!weArmed && !lockOrchestration.isArmed()) {
       lockOrchestration.arm({
         suppressCancel: true,
         triggerKind: 'website',
-        context: { hostname },
+        context: { hostname, target: blockedTarget },
       });
       weArmed = true;
     }
@@ -90,9 +113,14 @@ function onSiteMatch(hostname, _url) {
 
   if (matchedSinceMs === null) {
     matchedHostname = hostname;
+    matchedTarget = target;
     matchedSinceMs = Date.now();
     scheduleArm(delaySec);
+    return;
   }
+
+  matchedHostname = hostname;
+  matchedTarget = target;
 }
 
 function onSiteLeave() {

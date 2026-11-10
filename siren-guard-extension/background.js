@@ -23,13 +23,11 @@ try {
 
 let targets = [];
 let matchedHostname = null;
+let matchedTarget = null;
 let syncTimer = null;
 
-function isMatched(hostname) {
-  if (!hostname || targets.length === 0) {
-    return false;
-  }
-  return targets.some((target) => hostnameMatches(hostname, target));
+function isMatched(url) {
+  return findMatchingTarget(url, targets) !== null;
 }
 
 async function fetchTargets() {
@@ -74,10 +72,11 @@ async function postJson(path, body) {
   }
 }
 
-async function sendMatch(hostname, url) {
+async function sendMatch(hostname, url, target) {
   await postJson('/site-match', {
     hostname,
     url,
+    target: target || undefined,
     timestamp: Date.now(),
   });
 }
@@ -100,7 +99,7 @@ async function pollCloseTabOnce() {
     throw new Error(`close-tab status ${res.status}`);
   }
   const data = await res.json();
-  if (!data.close || !data.hostname) {
+  if (!data.close || (!data.hostname && !data.target)) {
     return;
   }
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -114,10 +113,17 @@ async function pollCloseTabOnce() {
   } catch {
     return;
   }
-  if (hostname === data.hostname || isMatched(hostname)) {
+  const matchesTarget = data.target
+    ? urlMatchesTarget(tab.url, data.target)
+    : false;
+  const matchesHostname =
+    Boolean(data.hostname) &&
+    (hostname === data.hostname || isMatched(tab.url));
+  if (matchesTarget || (!data.target && matchesHostname)) {
     await chrome.tabs.remove(tab.id);
     if (matchedHostname === hostname) {
       matchedHostname = null;
+      matchedTarget = null;
     }
   }
 }
@@ -160,6 +166,7 @@ async function evaluateActiveTabInner() {
     if (matchedHostname) {
       await sendLeave(matchedHostname, '');
       matchedHostname = null;
+      matchedTarget = null;
     }
     return;
   }
@@ -171,19 +178,25 @@ async function evaluateActiveTabInner() {
     return;
   }
 
-  const nowMatched = isMatched(hostname);
-  if (nowMatched && matchedHostname !== hostname) {
-    if (matchedHostname) {
+  const target = findMatchingTarget(tab.url, targets);
+  const nowMatched = target !== null;
+  if (
+    nowMatched &&
+    (matchedHostname !== hostname || matchedTarget !== target)
+  ) {
+    if (matchedHostname && matchedHostname !== hostname) {
       await sendLeave(matchedHostname, tab.url);
     }
     matchedHostname = hostname;
-    await sendMatch(hostname, tab.url);
+    matchedTarget = target;
+    await sendMatch(hostname, tab.url, target);
     return;
   }
 
   if (!nowMatched && matchedHostname) {
     await sendLeave(matchedHostname, tab.url);
     matchedHostname = null;
+    matchedTarget = null;
   }
 }
 
@@ -226,6 +239,12 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
 });
 
 chrome.webNavigation.onCommitted.addListener((details) => {
+  if (details.frameId === 0) {
+    evaluateActiveTab();
+  }
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
   if (details.frameId === 0) {
     evaluateActiveTab();
   }

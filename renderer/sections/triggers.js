@@ -85,9 +85,13 @@ function initTriggersSection() {
         </div>
         <ul id="website-targets-list" class="flagged-list"></ul>
         <div class="add-row">
-          <input id="website-domain-input" type="text" placeholder="e.g. *.youtube.com" />
+          <input id="website-domain-input" type="text" placeholder="e.g. *.youtube.com or youtube.com/shorts" />
           <button id="website-add-domain" type="button">Add</button>
         </div>
+        <p class="muted">
+          Add a hostname, a subdomain wildcard, or a path. Paths match that
+          path and anything under it (e.g. youtube.com/shorts).
+        </p>
         <p class="muted extension-hint">
           Install the Siren Guard browser extension via
           <code>chrome://extensions</code> (Developer mode → Load unpacked →
@@ -194,12 +198,43 @@ function initTriggersSection() {
     websiteTargetsCount.textContent = String(websiteTargets.length);
   }
 
-  function isValidWebsiteTarget(value) {
-    if (!value || /\s/.test(value)) {
-      return false;
+  function normalizeWebsiteTarget(value) {
+    if (!value || typeof value !== 'string') {
+      return null;
     }
-    const pattern = value.startsWith('*.') ? value.slice(2) : value;
-    return pattern.length > 0 && /^[a-z0-9.*-]+$/i.test(value);
+
+    let raw = value.trim().toLowerCase();
+    if (!raw) {
+      return null;
+    }
+
+    raw = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//, '').replace(/^\/\//, '');
+    const queryIndex = raw.search(/[?#]/);
+    if (queryIndex !== -1) {
+      raw = raw.slice(0, queryIndex);
+    }
+    raw = raw.replace(/\/+$/, '');
+
+    const slashIndex = raw.indexOf('/');
+    const host = (
+      slashIndex === -1 ? raw : raw.slice(0, slashIndex)
+    ).replace(/^www\./, '');
+    const path = slashIndex === -1 ? '' : raw.slice(slashIndex);
+    const bareHost = host.replace(/^\*\.?/, '');
+
+    if (
+      !bareHost ||
+      !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(
+        bareHost
+      )
+    ) {
+      return null;
+    }
+    if (path && /[\s\\]/.test(path)) {
+      return null;
+    }
+
+    return host + path;
   }
 
   async function persistTriggers() {
@@ -356,8 +391,8 @@ function initTriggersSection() {
   });
 
   websiteAddDomainBtn.addEventListener('click', async () => {
-    const raw = websiteDomainInput.value.trim().toLowerCase();
-    if (!isValidWebsiteTarget(raw)) {
+    const raw = normalizeWebsiteTarget(websiteDomainInput.value);
+    if (!raw) {
       return;
     }
     const exists = websiteTargets.some((t) => t.toLowerCase() === raw);
