@@ -1,6 +1,6 @@
 const { exec } = require('child_process');
 const lockOrchestration = require('./lock-orchestration');
-const { getAppDetectionTrigger, isTriggersSuspended } = require('./store');
+const { getAppDetectionTrigger } = require('./store');
 const { isAppBlocked } = require('./app-consequence-action');
 
 const POLL_INTERVAL_MS = 5000;
@@ -54,7 +54,7 @@ function isFlagged(frontmost, flaggedApps) {
 
 async function tick() {
   const config = getAppDetectionTrigger();
-  if (!config || !config.enabled || isTriggersSuspended()) {
+  if (!config || !config.enabled) {
     if (weArmed) {
       lockOrchestration.cancel();
       weArmed = false;

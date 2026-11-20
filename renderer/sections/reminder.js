@@ -31,7 +31,7 @@ function initReminderSection() {
 
     <div class="field">
       <label for="confirmation-phrase">Confirmation phrase</label>
-      <input id="confirmation-phrase" type="text" placeholder="Required for disable / quit / override" autocomplete="off" spellcheck="false" />
+      <input id="confirmation-phrase" type="text" placeholder="Required for disable / quit" autocomplete="off" spellcheck="false" />
       <p class="muted">Friction gates show this phrase and require you to type it exactly.</p>
     </div>
 

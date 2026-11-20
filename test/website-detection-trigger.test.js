@@ -27,7 +27,6 @@ function applyMocks() {
 
   mock.module('../store.js', () => ({
     getWebsiteDetectionTrigger: () => websiteTriggerConfig,
-    isTriggersSuspended: () => false,
     RE_ENTRY_BLOCK_SEC: 300,
   }));
 }

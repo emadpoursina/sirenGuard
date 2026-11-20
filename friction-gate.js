@@ -3,11 +3,9 @@ const { BrowserWindow, ipcMain } = require('electron');
 const {
   getConfirmationPhrase,
   appendOverrideLog,
-  setOverrideUntil,
 } = require('./store');
 
 const FRICTION_COUNTDOWN_SEC = 30;
-const OVERRIDE_DURATION_MS = 60 * 60 * 1000;
 
 let frictionWindow = null;
 let pendingAction = null;
@@ -115,11 +113,6 @@ function requestFriction(kind, payload = {}) {
 }
 
 async function executeFrictionAction(action, helpers = {}) {
-  if (action.kind === 'override-1h') {
-    setOverrideUntil(Date.now() + OVERRIDE_DURATION_MS);
-    helpers.broadcastSettingsChanged?.();
-    return;
-  }
   if (action.kind === 'quit') {
     const { app } = require('electron');
     app.quit();

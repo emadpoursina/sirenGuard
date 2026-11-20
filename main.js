@@ -220,13 +220,6 @@ function buildTrayMenu() {
     },
     { type: 'separator' },
     {
-      label: 'Override for 1 hour',
-      click: () => {
-        frictionGate.requestFriction('override-1h');
-      },
-    },
-    { type: 'separator' },
-    {
       label: 'Quit',
       click: () => {
         frictionGate.requestFriction('quit');

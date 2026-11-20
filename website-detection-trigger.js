@@ -1,5 +1,5 @@
 const lockOrchestration = require('./lock-orchestration');
-const { getWebsiteDetectionTrigger, isTriggersSuspended, RE_ENTRY_BLOCK_SEC } = require('./store');
+const { getWebsiteDetectionTrigger, RE_ENTRY_BLOCK_SEC } = require('./store');
 const {
   createReEntryBlockRegistry,
   hostnameKey,
@@ -86,7 +86,7 @@ function scheduleArm(delaySec) {
 
 function onSiteMatch(hostname, url, target) {
   const config = getWebsiteDetectionTrigger();
-  if (!config || !config.enabled || isTriggersSuspended()) {
+  if (!config || !config.enabled) {
     resetMatchState();
     cancelArmedState();
     return;
